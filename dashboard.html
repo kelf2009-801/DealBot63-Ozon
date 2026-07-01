@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DealBot63 — Дашборд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#05974f; --green-dark:#03733d; --green-light:#e8f8ef;
+  --gold:#f5b342; --gold-light:#fef7e8;
+  --bg:#f8fafc; --surface:#fff;
+  --text:#0f172a; --text-secondary:#475569; --text-muted:#94a3b8;
+  --border:#e2e8f0;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 10px 40px rgba(0,0,0,0.08);
+  --radius:16px; --radius-sm:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;padding:24px}
+.header{max-width:1200px;margin:0 auto 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:28px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.header h1 span{background:var(--green);color:#fff;font-size:14px;font-weight:600;padding:4px 12px;border-radius:20px}
+.header .time{color:var(--text-muted);font-size:14px}
+.grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card .label{font-size:13px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.card .value{font-size:32px;font-weight:800;color:var(--text);letter-spacing:-.02em}
+.card .sub{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.card .icon{font-size:24px;margin-bottom:8px}
+.green .value{color:var(--green)}
+.gold .value{color:var(--gold)}
+.charts-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.chart-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text-secondary)}
+.chart-card .chart-wrap{position:relative;height:260px}
+.table-wrap{max-width:1200px;margin:0 auto;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.table-wrap h3{font-size:15px;font-weight:600;padding:16px 20px 0;color:var(--text-secondary)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--green-light)}
+th{padding:12px 16px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td{padding:10px 16px;border-top:1px solid var(--border);color:var(--text)}
+tr:hover{background:var(--green-light)}
+.price-up{color:var(--green);font-weight:600}
+.price-down{color:#ef4444;font-weight:600}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-free{background:#e2e8f0;color:#475569}
+.badge-premium{background:var(--gold-light);color:#b8860b}
+.badge-vip{background:var(--green-light);color:var(--green-dark)}
+.loading{text-align:center;padding:60px;color:var(--text-muted);font-size:18px}
+.error{text-align:center;padding:40px;color:#ef4444}
+@media(max-width:768px){
+  body{padding:12px}
+  .header{gap:8px;margin-bottom:16px}
+  .header h1{font-size:20px}
+  .header h1 span{font-size:11px;padding:3px 10px}
+  .header .time{font-size:12px}
+  .grid{gap:10px;grid-template-columns:1fr 1fr;margin-bottom:16px}
+  .card{padding:14px;border-radius:12px}
+  .card .label{font-size:11px}
+  .card .value{font-size:22px}
+  .card .sub{font-size:11px}
+  .card .icon{font-size:20px;margin-bottom:4px}
+  .charts-grid{grid-template-columns:1fr;gap:10px;margin-bottom:16px}
+  .chart-card{padding:14px;border-radius:12px}
+  .chart-card h3{font-size:13px;margin-bottom:8px}
+  .chart-card .chart-wrap{height:180px}
+  .chart-card:last-child .chart-wrap{height:150px}
+  .table-wrap{border-radius:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-wrap h3{font-size:13px;padding:12px 14px 0}
+  table{font-size:12px;min-width:500px}
+  th{padding:8px 10px;font-size:10px}
+  td{padding:7px 10px;font-size:11px}
+  .badge{font-size:10px;padding:1px 6px}
+}
+@media(max-width:480px){
+  body{padding:8px}
+  .header h1{font-size:17px}
+  .header .time{font-size:11px}
+  .grid{gap:8px;grid-template-columns:1fr 1fr}
+  .card{padding:10px;border-radius:10px}
+  .card .value{font-size:18px}
+  .card .label{font-size:10px}
+  .card .sub{font-size:10px}
+  .card .icon{font-size:16px;margin-bottom:2px}
+  .chart-card{padding:10px;border-radius:10px}
+  .chart-card .chart-wrap{height:150px}
+  .chart-card:last-child .chart-wrap{height:130px}
+  .chart-card h3{font-size:12px}
+  th{padding:6px 8px;font-size:9px}
+  td{padding:5px 8px;font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📊 DealBot63 <span>DASHBOARD</span></h1>
+  <div class="time" id="lastUpdate">Загрузка...</div>
+</div>
+
+<div class="grid" id="statCards">
+  <div class="card"><div class="icon">📦</div><div class="label">Всего товаров</div><div class="value" id="statProducts">—</div><div class="sub" id="statProductsSub">отслеживается</div></div>
+  <div class="card"><div class="icon">👥</div><div class="label">Пользователей</div><div class="value" id="statUsers">—</div><div class="sub" id="statUsersSub">активных</div></div>
+  <div class="card green"><div class="icon">💰</div><div class="label">Общая экономия</div><div class="value" id="statSavings">—</div><div class="sub" id="statSavingsSub">по всем товарам</div></div>
+  <div class="card gold"><div class="icon">🔔</div><div class="label">Уведомлений</div><div class="value" id="statNotified">—</div><div class="sub" id="statNotifiedSub">сработало</div></div>
+  <div class="card"><div class="icon">🏷️</div><div class="label">Средняя цена</div><div class="value" id="statAvgPrice">—</div><div class="sub" id="statAvgPriceSub">по всем товарам</div></div>
+  <div class="card green"><div class="icon">🔄</div><div class="label">Проверок</div><div class="value" id="statChecks">—</div><div class="sub" id="statChecksSub">всего выполнено</div></div>
+</div>
+
+<div class="charts-grid">
+  <div class="chart-card">
+    <h3>🏆 Топ товаров по цене</h3>
+    <div class="chart-wrap"><canvas id="chartTopProducts"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <h3>👥 Распределение по тарифам</h3>
+    <div class="chart-wrap"><canvas id="chartTariffs"></canvas></div>
+  </div>
+  <div class="chart-card" style="grid-column:1/-1">
+    <h3>📈 Последние проверки цен</h3>
+    <div class="chart-wrap" style="height:200px"><canvas id="chartPriceHistory"></canvas></div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <h3>📋 Последние добавленные товары</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Название</th><th>Цена</th><th>Цель</th><th>Экономия</th><th>Статус</th><th>Дата</th></tr>
+    </thead>
+    <tbody id="productsTable"></tbody>
+  </table>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+const CHART_COLORS = ['#05974f','#f5b342','#3b82f6','#8b5cf6','#ef4444','#06b6d4','#f97316','#10b981'];
+let charts = {};
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => { if(c) { c.destroy(); } });
+  charts = {};
+}
+
+function formatPrice(p) { return Number(p || 0).toLocaleString('ru-RU') + ' ₽' }
+function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleString('ru-RU') }
+function timeAgo(d) { if(!d) return '—'; const s = Math.floor((Date.now()-new Date(d))/1000); if(s<60)return 'только что'; if(s<3600)return Math.floor(s/60)+'м назад'; if(s<86400)return Math.floor(s/3600)+'ч назад'; return Math.floor(s/86400)+'д назад' }
+
+async function loadData() {
+  destroyCharts();
+  document.getElementById('lastUpdate').textContent = '⏳ Загрузка...';
+  try {
+    const [stats, dashboard, products] = await Promise.all([
+      fetch(`${API_BASE}/api/stats`, {headers:{'X-API-Key':'grove-street-2024'}}).then(r=>r.json()),
+      fetch(`${API_BASE}/api/dashboard`, {headers:{'X-API-Key':'grove-street-2024'}}).then(r=>r.json()),
+      fetch(`${API_BASE}/api/products?limit=20`, {headers:{'X-API-Key':'grove-street-2024'}}).then(r=>r.json())
+    ]);
+
+    document.getElementById('lastUpdate').textContent = '🟢 Обновлено: ' + new Date().toLocaleString('ru-RU');
+    document.getElementById('statProducts').textContent = stats.total_products.toLocaleString('ru-RU');
+    document.getElementById('statUsers').textContent = stats.total_users.toLocaleString('ru-RU');
+    document.getElementById('statNotified').textContent = stats.notified_products.toLocaleString('ru-RU');
+    document.getElementById('statAvgPrice').textContent = formatPrice(stats.average_price);
+    document.getElementById('statChecks').textContent = (dashboard.total_checks || 0).toLocaleString('ru-RU');
+
+    // Считаем экономию
+    let totalSavings = 0;
+    let savedCount = 0;
+    if(products.products) {
+      products.products.forEach(p => {
+        const saved = (p.last_price || 0) - (p.current_price || 0);
+        if(saved > 0) { totalSavings += saved; savedCount++ }
+      });
+    }
+    document.getElementById('statSavings').textContent = formatPrice(totalSavings);
+    document.getElementById('statSavingsSub').textContent = `у ${savedCount} товаров подешевело`;
+    document.getElementById('statProductsSub').textContent = `из них ${savedCount} подешевело`;
+    document.getElementById('statUsersSub').textContent = `${stats.total_users} всего`;
+    document.getElementById('statNotifiedSub').textContent = `уведомлений отправлено`;
+    document.getElementById('statAvgPriceSub').textContent = `средняя цена`;
+    document.getElementById('statChecksSub').textContent = `проверок`;
+
+    // График: топ товаров по цене
+    if(products.products && products.products.length > 0) {
+      const top = [...products.products].sort((a,b) => b.current_price - a.current_price).slice(0, 8);
+      charts.topProducts = new Chart(document.getElementById('chartTopProducts'), {
+        type: 'bar',
+        data: {
+          labels: top.map(p => (p.title||'Товар').slice(0, 20)),
+          datasets: [{
+            label: 'Цена (₽)',
+            data: top.map(p => p.current_price || 0),
+            backgroundColor: CHART_COLORS.slice(0, top.length),
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { ticks: { callback: v => v.toLocaleString('ru-RU') + ' ₽' } } }
+        }
+      });
+    }
+
+    // График: тарифы
+    if(stats.tariff_stats && stats.tariff_stats.length > 0) {
+      charts.tariffs = new Chart(document.getElementById('chartTariffs'), {
+        type: 'doughnut',
+        data: {
+          labels: stats.tariff_stats.map(t => ({
+            free: 'Бесплатный', premium: 'Премиум', vip: 'VIP'
+          }[t.tariff] || t.tariff)),
+          datasets: [{
+            data: stats.tariff_stats.map(t => t.user_count),
+            backgroundColor: ['#94a3b8', '#f5b342', '#05974f'],
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    // График: история цен (последние проверки)
+    if(stats.all_price_history && stats.all_price_history.length > 0) {
+      const history = stats.all_price_history.reverse();
+      charts.priceHistory = new Chart(document.getElementById('chartPriceHistory'), {
+        type: 'line',
+        data: {
+          labels: history.map(h => h.timestamp ? new Date(h.timestamp).toLocaleDateString('ru-RU') : ''),
+          datasets: [{
+            label: 'Цена',
+            data: history.map(h => h.price || 0),
+            borderColor: '#05974f',
+            backgroundColor: 'rgba(5,151,79,0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { ticks: { callback: v => v.toLocaleString('ru-RU') + ' ₽' } } }
+        }
+      });
+    }
+
+    // Таблица товаров
+    const tbody = document.getElementById('productsTable');
+    if(products.products && products.products.length > 0) {
+      products.products.slice(0, 20).forEach(p => {
+        const saved = (p.last_price || 0) - (p.current_price || 0);
+        const savedText = saved > 0 ? `<span class="price-up">−${formatPrice(saved)}</span>` : '—';
+        const status = saved > 0 ? '<span class="badge badge-premium">🔥 Подешевел</span>' : '⏳ Ожидает';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>#${p.id}</td>
+          <td><a href="${p.url || '#'}" target="_blank" style="color:var(--green)">${(p.title||'Товар').slice(0, 40)}</a></td>
+          <td class="price-up">${formatPrice(p.current_price)}</td>
+          <td>${formatPrice(p.target_price)}</td>
+          <td>${savedText}</td>
+          <td>${status}</td>
+          <td>${p.last_check ? timeAgo(p.last_check) : '—'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = '🔴 Ошибка загрузки';
+    document.querySelectorAll('.value').forEach(el => el.textContent = '—');
+    document.querySelector('.grid').insertAdjacentHTML('beforeend',
+      `<div class="card" style="grid-column:1/-1"><div class="label">Ошибка</div><div class="value" style="font-size:14px;color:#ef4444">${e.message}</div></div>`);
+  }
+}
+
+loadData();
+setInterval(loadData, 30000); // Обновление каждые 30 сек
+</script>
+</body>
+</html>

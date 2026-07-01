@@ -1,0 +1,32 @@
+# Secrets
+.env
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Node
+node_modules/
+package-lock.json
+
+# Docker
+.docker/
+
+# Claude skills
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+temp/
+*.tmp

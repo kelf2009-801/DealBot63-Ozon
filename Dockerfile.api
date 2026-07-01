@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /bot
+
+# Ставим Flask
+RUN pip install --no-cache-dir flask
+
+# Копируем API, админку и дашборд
+COPY api_server.py .
+COPY admin_panel.html .
+COPY dashboard.html .
+
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "api_server.py"]

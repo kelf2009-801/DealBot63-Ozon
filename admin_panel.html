@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ozon Price Monitor — Admin Panel // Grove Street</title>
+<style>
+/* ============================================================
+   GROVE STREET FAMILIES — ADMIN PANEL
+   Ozon Price Monitor v2.0
+   Тёмная тема, зелёные акценты, хакерский стиль
+   ============================================================ */
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #161616;
+  --bg-card-hover: #1c1c1c;
+  --bg-input: #1a1a1a;
+  --border: #2a2a2a;
+  --border-active: #4CAF50;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888;
+  --text-muted: #555;
+  --accent: #4CAF50;
+  --accent-glow: rgba(76, 175, 80, 0.3);
+  --accent-dark: #2E7D32;
+  --danger: #f44336;
+  --warning: #FF9800;
+  --gold: #FFD700;
+  --font: 'Courier New', 'Consolas', 'Monaco', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Сканирующая линия */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanLine 4s linear infinite;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+@keyframes scanLine {
+  0% { top: -2px; }
+  100% { top: 100vh; }
+}
+
+/* Фоновый шум */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ========== HEADER ========== */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border);
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent);
+  background: rgba(76,175,80,0.1);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px var(--accent-glow);
+}
+
+.logo-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* ========== NAVIGATION ========== */
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.nav-btn:hover {
+  color: var(--accent);
+  border-color: var(--border);
+  background: rgba(76,175,80,0.05);
+}
+
+.nav-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(76,175,80,0.1);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* ========== MAIN CONTENT ========== */
+.main {
+  padding: 30px 0;
+}
+
+.page {
+  display: none;
+}
+.page.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== CARDS ========== */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(76,175,80,0.1);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.stat-card .card-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.stat-card .card-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.stat-card .card-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.stat-card .card-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ========== TABLES ========== */
+.table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-header h2 {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 12px 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+}
+
+td {
+  padding: 12px 20px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+}
+
+tr:hover td {
+  background: rgba(76,175,80,0.03);
+  color: var(--text-primary);
+}
+
+/* ========== BADGES ========== */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  font-family: var(--font);
+}
+
+.badge-free { background: rgba(136,136,136,0.2); color: #888; border: 1px solid #555; }
+.badge-premium { background: rgba(76,175,80,0.2); color: #4CAF50; border: 1px solid #2E7D32; }
+.badge-vip { background: rgba(255,215,0,0.2); color: #FFD700; border: 1px solid #FFD700; }
+.badge-danger { background: rgba(244,67,54,0.2); color: #f44336; border: 1px solid #d32f2f; }
+.badge-warning { background: rgba(255,152,0,0.2); color: #FF9800; border: 1px solid #f57c00; }
+
+/* ========== BUTTONS ========== */
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  background: rgba(76,175,80,0.1);
+}
+
+.btn-primary {
+  border-color: var(--accent);
+  background: rgba(76,175,80,0.15);
+  color: var(--accent);
+}
+
+.btn-primary:hover {
+  background: rgba(76,175,80,0.25);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(244,67,54,0.15);
+  box-shadow: 0 0 10px rgba(244,67,54,0.3);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 10px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========== FORMS ========== */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.form-select {
+  cursor: pointer;
+}
+
+.form-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* ========== MODAL ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+.modal h2 {
+  font-size: 16px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.modal-close:hover {
+  color: var(--danger);
+}
+
+/* ========== CHARTS ========== */
+.chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.chart-container h3 {
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 20px;
+}
+
+canvas {
+  width: 100% !important;
+  max-height: 300px;
+}
+
+/* ========== TARIFF CARDS ========== */
+.tariff-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.tariff-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.tariff-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(76,175,80,0.15);
+}
+
+.tariff-card.vip-card {
+  border-color: rgba(255,215,0,0.3);
+}
+
+.tariff-card.vip-card:hover {
+  border-color: #FFD700;
+  box-shadow: 0 8px 30px rgba(255,215,0,0.15);
+}
+
+.tariff-card .tariff-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.tariff-card .tariff-name {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.tariff-card .tariff-limit {
+  font-size: 36px;
+  font-weight: bold;
+  color: var(--accent);
+  margin: 12px 0;
+}
+
+.tariff-card.vip-card .tariff-limit {
+  color: var(--gold);
+}
+
+.tariff-card .tariff-interval {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.tariff-card .tariff-users {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ========== USER PRODUCTS TABLE ========== */
+.user-products-section {
+  margin-top: 20px;
+}
+
+/* ========== TOAST ========== */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
+  animation: toastIn 0.4s ease;
+  border: 1px solid;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  letter-spacing: 0.5px;
+  max-width: 400px;
+  backdrop-filter: blur(10px);
+}
+
+.toast-success {
+  background: rgba(76,175,80,0.2);
+  border-color: var(--accent);
+  color: #4ade80;
+  box-shadow: 0 4px 20px rgba(76,175,80,0.15);
+}
+
+.toast-error {
+  background: rgba(244,67,54,0.2);
+  border-color: var(--danger);
+  color: #f87171;
+  box-shadow: 0 4px 20px rgba(244,67,54,0.15);
+}
+
+@keyframes toastIn {
+  from { transform: translateX(120%); opacity: 0; }
+  60% { transform: translateX(-10px); opacity: 1; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ========== LOADING ========== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.loading::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin-left: 12px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== STATUS BAR ========== */
+.status-bar {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.status-dot.online {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.status-dot.offline {
+  background: var(--danger);
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dark); }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+    height: auto;
+    padding: 12px 0;
+    gap: 12px;
+  }
+  .nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+  .tariff-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========== GLITCH EFFECT ========== */
+.glitch-text {
+  position: relative;
+  animation: glitch 5s infinite;
+}
+
+@keyframes glitch {
+  0%, 90%, 100% { transform: none; opacity: 1; }
+  92% { transform: translate(-2px, 1px); opacity: 0.8; }
+  94% { transform: translate(2px, -1px); opacity: 0.9; }
+  96% { transform: none; opacity: 1; }
+}
+
+/* ========== SEARCH ========== */
+.search-box {
+  position: relative;
+}
+
+.search-input {
+  padding: 8px 14px 8px 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 12px;
+  border-radius: 4px;
+  width: 250px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  width: 300px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text glitch-text">OZON PRICE MONITOR</div>
+        <div class="logo-sub">Grove Street Families // Admin Panel v2.0</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="dashboard">📊 Дашборд</button>
+      <button class="nav-btn" data-page="users">👥 Пользователи</button>
+      <button class="nav-btn" data-page="tariffs">💎 Тарифы</button>
+      <button class="nav-btn" data-page="stats">📈 Статистика</button>
+    </nav>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="globalSearch" placeholder="Поиск по пользователям..." onkeyup="handleSearch()">
+    </div>
+  </div>
+</header>
+
+<!-- ========== MAIN CONTENT ========== -->
+<main class="main">
+  <div class="container">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-cards" id="dashboardCards">
+        <div class="loading">Загрузка дашборда...</div>
+      </div>
+
+      <div class="table-container" style="margin-bottom:20px;">
+        <div class="table-header"><h2>🕐 Последняя активность</h2></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Товар</th><th>Цена</th><th>Последняя проверка</th></tr></thead>
+            <tbody id="recentActivity"><tr><td colspan="3" class="loading">Загрузка...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header"><h2>🏆 Топ пользователей</h2></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>User ID</th><th>Товаров</th><th></th></tr></thead>
+            <tbody id="topUsers"><tr><td colspan="3" class="loading">Загрузка...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="table-container">
+        <div class="table-header">
+          <h2>👥 Все пользователи</h2>
+          <span style="font-size:11px;color:var(--text-muted);" id="usersCount">—</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>User ID</th><th>Товаров</th><th>Алертов</th><th>Тариф</th><th>Активность</th><th>Действия</th></tr></thead>
+            <tbody id="usersTable"><tr><td colspan="6" class="loading">Загрузка...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- User Products Detail -->
+      <div class="user-products-section" id="userProductsSection" style="display:none;">
+        <div class="table-container">
+          <div class="table-header">
+            <h2>📦 Товары пользователя <span id="userProductsTitle" style="color:var(--accent);">#...</span></h2>
+            <button class="btn btn-sm" onclick="closeUserProducts()">✕ Закрыть</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>ID</th><th>Товар</th><th>Тек. цена</th><th>Цель</th><th>Тип алерта</th><th>Проверка</th><th></th></tr></thead>
+              <tbody id="userProductsTable"><tr><td colspan="7" class="loading">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARIFFS -->
+    <div class="page" id="page-tariffs">
+      <div class="tariff-cards" id="tariffCards">
+        <div class="loading">Загрузка тарифов...</div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h2>📋 Назначенные тарифы</h2>
+          <button class="btn btn-primary btn-sm" onclick="showAddTariffModal()">+ Назначить тариф</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>User ID</th><th>Тариф</th><th>Истекает</th><th>Действия</th></tr></thead>
+            <tbody id="tariffsTable"><tr><td colspan="4" class="loading">Загрузка...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div class="page" id="page-stats">
+      <div class="chart-grid">
+        <div class="chart-container">
+          <h3>📉 История цен</h3>
+          <canvas id="chartPriceHistory"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>📅 Проверок по дням</h3>
+          <canvas id="chartChecksPerDay"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>👥 Пользователи по тарифам</h3>
+          <canvas id="chartTariffDist"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>🔔 Типы алертов</h3>
+          <canvas id="chartAlertTypes"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ========== STATUS BAR ========== -->
+<div class="status-bar">
+  <div>
+    <span class="status-dot online" id="statusDot"></span>
+    <span id="statusText">API: подключено</span>
+  </div>
+  <div>
+    <span id="clock">--</span> &nbsp;|&nbsp; 
+    OZON PRICE MONITOR &nbsp;|&nbsp; 
+    Grove Street Families
+  </div>
+</div>
+
+<!-- ========== MODAL: Add/Edit Tariff ========== -->
+<div class="modal-overlay" id="tariffModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeTariffModal()">✕</button>
+    <h2>⚙️ Назначить тариф</h2>
+    <div class="form-group">
+      <label>User ID</label>
+      <input type="number" class="form-input" id="tariffUserId" placeholder="Telegram User ID">
+    </div>
+    <div class="form-group">
+      <label>Тариф</label>
+      <select class="form-select" id="tariffSelect">
+        <option value="free">Free — 3 товара / 3 часа</option>
+        <option value="premium">Premium — 20 товаров / 30 мин</option>
+        <option value="vip">VIP — 100 товаров / 10 мин</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Дата истечения (опционально)</label>
+      <input type="datetime-local" class="form-input" id="tariffExpires">
+    </div>
+    <button class="btn btn-primary" onclick="saveTariff()" style="width:100%;">💾 Сохранить</button>
+  </div>
+</div>
+
+<!-- ========== MODAL: Price History ========== -->
+<div class="modal-overlay" id="priceHistoryModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closePriceHistoryModal()">✕</button>
+    <h2>📈 История цен</h2>
+    <canvas id="chartPriceDetail" style="max-height:350px;"></canvas>
+    <div style="margin-top:16px;max-height:200px;overflow-y:auto;">
+      <table style="font-size:11px;">
+        <thead><tr><th>Дата</th><th>Цена</th></tr></thead>
+        <tbody id="priceHistoryTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TOAST CONTAINER ========== -->
+<div id="toastContainer"></div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// ============================================================
+// GROVE STREET FAMILIES — ADMIN PANEL JS
+// ============================================================
+
+const API_BASE = 'http://localhost:5000/api';
+const API_KEY = 'grove-street-2024';
+
+// Helper: all API calls include auth header
+async function apiFetch(path, options = {}) {
+  const url = API_BASE + path;
+  const headers = { ...options.headers, 'X-API-Key': API_KEY };
+  return fetch(url, { ...options, headers });
+}
+let allUsers = [];
+let chartInstances = {};
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+  setupNavigation();
+  updateClock();
+  setInterval(updateClock, 10000);
+  loadDashboard();
+  checkAPI();
+  setInterval(checkAPI, 30000);
+});
+
+// ========== NAVIGATION ==========
+function setupNavigation() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const page = btn.dataset.page;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+
+      switch(page) {
+        case 'dashboard': loadDashboard(); break;
+        case 'users': loadUsers(); break;
+        case 'tariffs': loadTariffs(); break;
+        case 'stats': loadStats(); break;
+      }
+    });
+  });
+}
+
+// ========== API CHECK ==========
+async function checkAPI() {
+  try {
+    const res = await apiFetch('/dashboard');
+    if (res.ok) {
+      document.getElementById('statusDot').className = 'status-dot online';
+      document.getElementById('statusText').textContent = 'API: online';
+    }
+  } catch(e) {
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'API: offline';
+  }
+}
+
+// ========== CLOCK ==========
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('ru-RU');
+}
+
+// ========== TOAST ==========
+function showToast(msg, type='success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  const icon = type === 'success' ? '✅ ' : '❌ ';
+  toast.textContent = icon + msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+// ========== FORMAT ==========
+function formatPrice(p) {
+  if (p == null) return '—';
+  return Number(p).toLocaleString('ru-RU') + ' ₽';
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('ru-RU');
+}
+
+function formatDateShort(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('ru-RU') + ' ' + dt.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ========== DASHBOARD ==========
+async function loadDashboard() {
+  try {
+    const res = await apiFetch('/dashboard');
+    const data = await res.json();
+
+    const cards = document.getElementById('dashboardCards');
+    cards.innerHTML = `
+      <div class="stat-card">
+        <div class="card-icon">👥</div>
+        <div class="card-label">Пользователей</div>
+        <div class="card-value">${data.total_users}</div>
+        <div class="card-sub">активных трекеров</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">📦</div>
+        <div class="card-label">Товаров</div>
+        <div class="card-value">${data.total_products}</div>
+        <div class="card-sub">на отслеживании</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">🔔</div>
+        <div class="card-label">Алертов</div>
+        <div class="card-value">${data.notified ?? 0}</div>
+        <div class="card-sub">отправлено</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">📉</div>
+        <div class="card-label">Падений цен</div>
+        <div class="card-value">${data.price_drops ?? data.notified ?? 0}</div>
+        <div class="card-sub">ниже целевой</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">💰</div>
+        <div class="card-label">Средняя цена</div>
+        <div class="card-value">${formatPrice(data.avg_price)}</div>
+        <div class="card-sub">по всем товарам</div>
+      </div>
+      <div class="stat-card">
+        <div class="card-icon">🔄</div>
+        <div class="card-label">Проверок</div>
+        <div class="card-value">${data.total_checks}</div>
+        <div class="card-sub">всего записей</div>
+      </div>
+    `;
+
+    // Recent activity
+    const recentBody = document.getElementById('recentActivity');
+    if (data.recent_activity && data.recent_activity.length > 0) {
+      recentBody.innerHTML = data.recent_activity.map(r => `
+        <tr>
+          <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.title}">${r.title || '—'}</td>
+          <td>${formatPrice(r.current_price ?? r.price ?? 0)}</td>
+          <td>${formatDateShort(r.last_check)}</td>
+        </tr>
+      `).join('');
+    } else {
+      recentBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Нет данных</td></tr>';
+    }
+
+    // Top users
+    const topBody = document.getElementById('topUsers');
+    if (data.top_users && data.top_users.length > 0) {
+      topBody.innerHTML = data.top_users.map((u, i) => `
+        <tr>
+          <td><span style="color:var(--accent);">#${u.user_id}</span></td>
+          <td>${u.product_count ?? u.cnt ?? 0} товаров</td>
+          <td><button class="btn btn-sm" onclick="viewUserProducts(${u.user_id})">📋 Товары</button></td>
+        </tr>
+      `).join('');
+    } else {
+      topBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Нет данных</td></tr>';
+    }
+
+  } catch(e) {
+    console.error('Dashboard error:', e);
+    showToast('Ошибка загрузки дашборда', 'error');
+  }
+}
+
+// ========== USERS ==========
+async function loadUsers() {
+  try {
+    const res = await apiFetch('/users');
+    const data = await res.json();
+    allUsers = data.users || [];
+
+    document.getElementById('usersCount').textContent = `Всего: ${allUsers.length}`;
+    renderUsersTable(allUsers);
+
+  } catch(e) {
+    console.error('Users error:', e);
+    showToast('Ошибка загрузки пользователей', 'error');
+  }
+}
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTable');
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Нет пользователей</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const tariff = u.tariff || 'free';
+    const badgeClass = 'badge badge-' + tariff;
+    const tariffName = tariff === 'free' ? 'Free' : tariff === 'premium' ? 'Premium' : 'VIP';
+    return `
+      <tr>
+        <td><span style="color:var(--accent);">${u.user_id}</span></td>
+        <td>${u.product_count}</td>
+        <td>${u.alerts_count || 0}</td>
+        <td><span class="${badgeClass}">${tariffName}</span></td>
+        <td>${formatDateShort(u.last_activity)}</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm" onclick="viewUserProducts(${u.user_id})" title="Посмотреть товары">📦</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteUserProducts(${u.user_id})" title="Удалить все товары пользователя">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function handleSearch() {
+  const query = document.getElementById('globalSearch').value.toLowerCase();
+  if (!query) {
+    renderUsersTable(allUsers);
+    return;
+  }
+  const filtered = allUsers.filter(u => String(u.user_id).includes(query));
+  renderUsersTable(filtered);
+}
+
+async function viewUserProducts(userId) {
+  try {
+    const res = await apiFetch('/user_products?user_id=' + userId);
+    const data = await res.json();
+    const products = data.products || [];
+
+    document.getElementById('userProductsTitle').textContent = '#' + userId;
+    const section = document.getElementById('userProductsSection');
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth' });
+
+    const tbody = document.getElementById('userProductsTable');
+    if (products.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Нет товаров</td></tr>';
+    } else {
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.title}">${p.title || '—'}</td>
+          <td>${formatPrice(p.current_price)}</td>
+          <td>${formatPrice(p.target_price)}</td>
+          <td>${p.alert_type || '—'} ${p.alert_value ? p.alert_value + '%' : ''}</td>
+          <td>${formatDateShort(p.last_check)}</td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm" onclick="viewPriceHistory(${p.id})" title="История цен">📈</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})" title="Удалить товар">✕</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch(e) {
+    showToast('Ошибка загрузки товаров', 'error');
+  }
+}
+
+function closeUserProducts() {
+  document.getElementById('userProductsSection').style.display = 'none';
+}
+
+async function deleteProduct(productId) {
+  if (!confirm('Удалить товар #' + productId + ' и его историю цен?')) return;
+  try {
+    const res = await apiFetch('/products/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: productId })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('Товар удалён');
+      loadUsers();
+      // Refresh user products if open
+      const userIdEl = document.getElementById('userProductsTitle');
+      if (userIdEl && userIdEl.textContent.startsWith('#')) {
+        viewUserProducts(parseInt(userIdEl.textContent.replace('#', '')));
+      }
+    }
+  } catch(e) {
+    showToast('Ошибка удаления', 'error');
+  }
+}
+
+async function deleteUserProducts(userId) {
+  if (!confirm('Удалить ВСЕ товары пользователя #' + userId + '?')) return;
+  try {
+    // Get all products for user
+    const res = await apiFetch('/user_products?user_id=' + userId);
+    const data = await res.json();
+    const products = data.products || [];
+
+    for (const p of products) {
+      await apiFetch('/products/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: p.id })
+      });
+    }
+    showToast('Все товары пользователя удалены');
+    loadUsers();
+  } catch(e) {
+    showToast('Ошибка удаления', 'error');
+  }
+}
+
+// ========== PRICE HISTORY ==========
+async function viewPriceHistory(productId) {
+  try {
+    const res = await apiFetch('/price_history?product_id=' + productId);
+    const data = await res.json();
+    const history = (data.history || []).reverse();
+
+    // Destroy previous chart
+    if (chartInstances['priceDetail']) {
+      chartInstances['priceDetail'].destroy();
+    }
+
+    document.getElementById('priceHistoryModal').classList.add('active');
+
+    const tbody = document.getElementById('priceHistoryTable');
+    if (history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">Нет истории</td></tr>';
+    } else {
+      tbody.innerHTML = history.map(h => `
+        <tr><td>${formatDateShort(new Date(h.timestamp * 1000))}</td><td>${formatPrice(h.price)}</td></tr>
+      `).join('');
+    }
+
+    // Draw chart
+    const ctx = document.getElementById('chartPriceDetail').getContext('2d');
+    chartInstances['priceDetail'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: history.map(h => new Date(h.timestamp * 1000).toLocaleDateString('ru-RU')),
+        datasets: [{
+          label: 'Цена (₽)',
+          data: history.map(h => h.price),
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76,175,80,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: '#4CAF50',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#888', font: { family: 'monospace' } } }
+        },
+        scales: {
+          x: { ticks: { color: '#555', maxTicksLimit: 10 }, grid: { color: '#1a1a1a' } },
+          y: { ticks: { color: '#555', callback: v => v + ' ₽' }, grid: { color: '#1a1a1a' } }
+        }
+      }
+    });
+
+  } catch(e) {
+    showToast('Ошибка загрузки истории', 'error');
+  }
+}
+
+function closePriceHistoryModal() {
+  document.getElementById('priceHistoryModal').classList.remove('active');
+  if (chartInstances['priceDetail']) {
+    chartInstances['priceDetail'].destroy();
+    chartInstances['priceDetail'] = null;
+  }
+}
+
+// ========== TARIFFS ==========
+async function loadTariffs() {
+  try {
+    const res = await apiFetch('/tariffs');
+    const data = await res.json();
+    const tariffs = data.tariffs || [];
+    const defs = data.definitions || {};
+
+    // Count users per tariff
+    const counts = {};
+    tariffs.forEach(t => {
+      counts[t.tariff] = (counts[t.tariff] || 0) + 1;
+    });
+
+    // Tariff cards
+    const cardsDiv = document.getElementById('tariffCards');
+    const tariffNames = { free: 'Free', premium: 'Premium', vip: 'VIP' };
+    const tariffIcons = { free: '🆓', premium: '💎', vip: '👑' };
+    const tariffOrder = ['free', 'premium', 'vip'];
+
+    cardsDiv.innerHTML = tariffOrder.map(t => {
+      const def = defs[t] || {};
+      const vipClass = t === 'vip' ? ' vip-card' : '';
+      const limitVal = def.max_products || def.limit || '?';
+      const intervalVal = def.interval_min || (def.check_interval ? Math.round(def.check_interval / 60) : '?');
+      return `
+        <div class="tariff-card${vipClass}">
+          <div class="tariff-icon">${tariffIcons[t]}</div>
+          <div class="tariff-name" style="color:${def.color || '#4CAF50'}">${tariffNames[t]}</div>
+          <div class="tariff-limit">${limitVal}</div>
+          <div style="font-size:12px;color:var(--text-muted);">товаров</div>
+          <div class="tariff-interval">⏱ Проверка: каждые ${intervalVal} мин</div>
+          <div class="tariff-users">👥 ${counts[t] || 0} пользователей</div>
+        </div>
+      `;
+    }).join('');
+
+    // Tariffs table
+    const tbody = document.getElementById('tariffsTable');
+    if (tariffs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Нет назначенных тарифов</td></tr>';
+    } else {
+      tbody.innerHTML = tariffs.map(t => {
+        const badgeClass = 'badge badge-' + (t.tariff || 'free');
+        return `
+          <tr>
+            <td><span style="color:var(--accent);">${t.user_id}</span></td>
+            <td><span class="${badgeClass}">${tariffNames[t.tariff] || t.tariff}</span></td>
+            <td>${t.expires_at ? formatDate(t.expires_at) : '<span style="color:var(--text-muted);">Бессрочно</span>'}</td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-sm" onclick="editTariff(${t.user_id}, '${t.tariff}', '${t.expires_at || ''}')" title="Редактировать тариф">✏️</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteTariff(${t.user_id})" title="Удалить тариф">✕</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  } catch(e) {
+    showToast('Ошибка загрузки тарифов', 'error');
+  }
+}
+
+function showAddTariffModal() {
+  document.getElementById('tariffUserId').value = '';
+  document.getElementById('tariffSelect').value = 'free';
+  document.getElementById('tariffExpires').value = '';
+  document.getElementById('tariffModal').classList.add('active');
+}
+
+function editTariff(userId, tariff, expires) {
+  document.getElementById('tariffUserId').value = userId;
+  document.getElementById('tariffSelect').value = tariff;
+  document.getElementById('tariffExpires').value = expires ? expires.slice(0, 16) : '';
+  document.getElementById('tariffModal').classList.add('active');
+}
+
+function closeTariffModal() {
+  document.getElementById('tariffModal').classList.remove('active');
+}
+
+async function saveTariff() {
+  const userId = document.getElementById('tariffUserId').value;
+  const tariff = document.getElementById('tariffSelect').value;
+  const expires = document.getElementById('tariffExpires').value;
+
+  if (!userId) { showToast('Введите User ID', 'error'); return; }
+
+  try {
+    const res = await apiFetch('/tariffs/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: parseInt(userId),
+        tariff: tariff,
+        expires_at: expires || null
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('Тариф сохранён');
+      closeTariffModal();
+      loadTariffs();
+    }
+  } catch(e) {
+    showToast('Ошибка сохранения', 'error');
+  }
+}
+
+async function deleteTariff(userId) {
+  if (!confirm('Удалить тариф для пользователя #' + userId + '?')) return;
+  try {
+    const res = await apiFetch('/tariffs/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('Тариф удалён');
+      loadTariffs();
+    }
+  } catch(e) {
+    showToast('Ошибка удаления', 'error');
+  }
+}
+
+// ========== STATISTICS ==========
+async function loadStats() {
+  try {
+    const res = await apiFetch('/stats');
+    const data = await res.json();
+
+    // Destroy previous charts
+    Object.values(chartInstances).forEach(c => c.destroy());
+    chartInstances = {};
+
+    // Price History Chart
+    const priceHistory = (data.price_history || []).reverse();
+    if (priceHistory.length > 0) {
+      const ctx1 = document.getElementById('chartPriceHistory').getContext('2d');
+      chartInstances['priceHistory'] = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: priceHistory.map(h => new Date(h.timestamp * 1000).toLocaleDateString('ru-RU')),
+          datasets: [{
+            label: 'Цена (₽)',
+            data: priceHistory.map(h => h.price),
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76,175,80,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: '#888', font: { family: 'monospace' } } } },
+          scales: {
+            x: { ticks: { color: '#555', maxTicksLimit: 8 }, grid: { color: '#1a1a1a' } },
+            y: { ticks: { color: '#555', callback: v => v + ' ₽' }, grid: { color: '#1a1a1a' } }
+          }
+        }
+      });
+    }
+
+    // Checks Per Day
+    const checks = (data.checks_per_day || []).reverse();
+    if (checks.length > 0) {
+      const ctx2 = document.getElementById('chartChecksPerDay').getContext('2d');
+      chartInstances['checksPerDay'] = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: checks.map(c => c.day),
+          datasets: [{
+            label: 'Проверок',
+            data: checks.map(c => c.checks),
+            backgroundColor: 'rgba(76,175,80,0.4)',
+            borderColor: '#4CAF50',
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: '#888', font: { family: 'monospace' } } } },
+          scales: {
+            x: { ticks: { color: '#555', maxTicksLimit: 10 }, grid: { color: '#1a1a1a' } },
+            y: { ticks: { color: '#555', beginAtZero: true }, grid: { color: '#1a1a1a' } }
+          }
+        }
+      });
+    }
+
+    // Tariff Distribution
+    const tariffStats = data.tariff_stats || [];
+    if (tariffStats.length > 0) {
+      const ctx3 = document.getElementById('chartTariffDist').getContext('2d');
+      const colors = { free: '#888', premium: '#4CAF50', vip: '#FFD700' };
+      chartInstances['tariffDist'] = new Chart(ctx3, {
+        type: 'doughnut',
+        data: {
+          labels: tariffStats.map(t => t.tariff === 'free' ? 'Free' : t.tariff === 'premium' ? 'Premium' : 'VIP'),
+          datasets: [{
+            data: tariffStats.map(t => t.user_count),
+            backgroundColor: tariffStats.map(t => colors[t.tariff] || '#4CAF50'),
+            borderColor: '#111',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#888', font: { family: 'monospace' } } }
+          }
+        }
+      });
+    }
+
+    // Alert Types
+    const alertTypes = data.alert_types || [];
+    if (alertTypes.length > 0) {
+      const ctx4 = document.getElementById('chartAlertTypes').getContext('2d');
+      chartInstances['alertTypes'] = new Chart(ctx4, {
+        type: 'polarArea',
+        data: {
+          labels: alertTypes.map(a => a.alert_type === 'percent' ? 'Процент' : 'Фикс. цена'),
+          datasets: [{
+            data: alertTypes.map(a => a.cnt),
+            backgroundColor: ['rgba(76,175,80,0.5)', 'rgba(255,215,0,0.5)', 'rgba(255,152,0,0.5)'],
+            borderColor: '#111',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#888', font: { family: 'monospace' } } }
+          },
+          scales: {
+            r: { ticks: { color: '#555', backdropColor: 'transparent' }, grid: { color: '#1a1a1a' } }
+          }
+        }
+      });
+    }
+
+  } catch(e) {
+    console.error('Stats error:', e);
+    showToast('Ошибка загрузки статистики', 'error');
+  }
+}
+
+// ========== CLOSE MODALS ON OVERLAY CLICK ==========
+document.getElementById('tariffModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTariffModal();
+});
+document.getElementById('priceHistoryModal').addEventListener('click', function(e) {
+  if (e.target === this) closePriceHistoryModal();
+});
+</script>
+
+</body>
+</html>

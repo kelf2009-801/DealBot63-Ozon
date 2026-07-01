@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DealBot63 — Мониторинг цен Ozon</title>
+<meta property="og:title" content="DealBot63 — Мониторинг цен Ozon">
+<meta property="og:description" content="Умный Telegram бот для отслеживания цен на Ozon. Мгновенные уведомления о снижении, графики динамики, управление товарами.">
+<meta property="og:type" content="website">
+<meta name="description" content="Умный Telegram бот для отслеживания цен на Ozon. Мгновенные уведомления о снижении, графики динамики, управление товарами.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%238052ff'/><text x='16' y='23' font-size='20' text-anchor='middle' fill='white' font-weight='bold'>D</text></svg>">
+<style>
+/* ── DALA COSMIC DESIGN SYSTEM ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --void:#000;--bone:#fff;--ash:#bdbdbd;--smoke:#9a9a9a;
+  --violet:#8052ff;--amber:#ffb829;--lichen:#15846e;
+  --radius-sm:4px;--radius-md:8px;--radius-lg:12px;
+  --max-w:1200px;--base:6px;
+  --font:'Inter','Söhne','Space Grotesk','Segoe UI',sans-serif;
+  --nav-h:64px;
+}
+html{scroll-behavior:smooth;scroll-padding-top:var(--nav-h)}
+body{
+  background:var(--void);color:var(--bone);
+  font-family:var(--font);-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ── Scroll Progress Bar ── */
+#scroll-progress{
+  position:fixed;top:0;left:0;height:2px;z-index:200;
+  background:linear-gradient(90deg,var(--violet),var(--amber));
+  width:0%;transition:width 0.05s linear;
+}
+
+/* ── Gradient Mesh ── */
+.bg-mesh{
+  position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+}
+.bg-mesh .mesh-blob{
+  position:absolute;border-radius:50%;filter:blur(100px);opacity:0.2;
+  animation:meshFloat 25s infinite ease-in-out;
+}
+.bg-mesh .mesh-blob:nth-child(1){
+  width:500px;height:500px;background:var(--violet);
+  top:-10%;left:-5%;
+}
+.bg-mesh .mesh-blob:nth-child(2){
+  width:400px;height:400px;background:var(--amber);
+  bottom:-10%;right:-5%;animation-delay:-8s;opacity:0.12;
+}
+.bg-mesh .mesh-blob:nth-child(3){
+  width:300px;height:300px;background:var(--lichen);
+  top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-16s;opacity:0.08;
+}
+@keyframes meshFloat{
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(60px,-80px) scale(1.15)}
+  50%{transform:translate(-40px,70px) scale(0.9)}
+  75%{transform:translate(80px,50px) scale(1.05)}
+}
+
+/* ── Noise Texture ── */
+.bg-noise{
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+/* ── Utilities ── */
+.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+.section{padding:100px 0;position:relative;z-index:2}
+.section-glow{height:1px;background:linear-gradient(90deg,transparent,rgba(128,82,255,0.25),transparent);margin:0;position:relative;z-index:2}
+
+/* ── Cursor Glow ── */
+#cursor-glow{
+  position:fixed;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(128,82,255,0.05) 0%,transparent 70%);
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);will-change:left,top;
+}
+
+/* ── Particle Canvas ── */
+#particles-canvas{
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  z-index:0;pointer-events:none;
+}
+
+/* ── Navbar ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:var(--nav-h);display:flex;align-items:center;
+  animation:navSlideIn 0.8s ease-out;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(128,82,255,0.08);
+}
+@keyframes navSlideIn{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:var(--max-w);margin:0 auto;padding:0 24px;width:100%;
+}
+.nav-logo{
+  font-size:20px;font-weight:700;letter-spacing:-0.02em;
+  color:var(--bone);display:flex;align-items:center;gap:10px;
+}
+.nav-logo .logo-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--violet);display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;
+}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{
+  font-size:14px;font-weight:500;color:var(--smoke);
+  position:relative;transition:color 0.3s;
+  letter-spacing:0.021em;
+}
+.nav-links a::after{
+  content:'';position:absolute;bottom:-3px;left:0;
+  width:0;height:1.5px;background:var(--violet);
+  transition:width 0.3s ease;
+}
+.nav-links a:hover{color:var(--bone)}
+.nav-links a:hover::after{width:100%}
+.nav-btn{
+  padding:8px 24px;border-radius:999px;
+  background:var(--violet);color:var(--bone);
+  font-size:13px;font-weight:600;letter-spacing:0.021em;
+  border:none;cursor:pointer;transition:all 0.3s;
+  text-shadow:0 1px 2px rgba(0,0,0,0.2);
+}
+.nav-btn:hover{background:#6f3ee8;transform:translateY(-1px)}
+
+/* ── Hamburger ── */
+.hamburger{
+  display:none;flex-direction:column;gap:5px;cursor:pointer;
+  background:none;border:none;padding:4px;z-index:101;
+}
+.hamburger span{
+  display:block;width:24px;height:2px;background:var(--bone);
+  border-radius:2px;transition:all 0.3s;
+}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+
+/* ── Mobile Menu Overlay ── */
+.mobile-menu{
+  display:none;position:fixed;inset:0;z-index:99;
+  background:rgba(0,0,0,0.95);backdrop-filter:blur(30px);
+  flex-direction:column;align-items:center;justify-content:center;gap:32px;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
+}
+.mobile-menu.open{opacity:1;pointer-events:auto}
+.mobile-menu a{
+  font-size:24px;font-weight:300;color:var(--bone);
+  letter-spacing:-0.02em;transition:color 0.3s;
+}
+.mobile-menu a:hover{color:var(--violet)}
+
+/* ── Hero ── */
+.hero{
+  min-height:100dvh;display:flex;align-items:center;
+  position:relative;z-index:2;padding-top:80px;
+}
+.hero-grid-bg{
+  position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(128,82,255,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(128,82,255,0.025) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse at center,black 35%,transparent 72%);
+  -webkit-mask-image:radial-gradient(ellipse at center,black 35%,transparent 72%);
+}
+.hero .container{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:999px;
+  border:1px solid rgba(128,82,255,0.2);
+  font-size:12px;font-weight:600;color:var(--violet);
+  letter-spacing:0.05em;margin-bottom:24px;
+  animation:floatUp 4s ease-in-out infinite;
+}
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hero h1{
+  font-size:clamp(44px,6vw,78px);font-weight:400;letter-spacing:-0.04em;
+  line-height:0.95;margin-bottom:20px;
+}
+.hero h1 .gradient-text{
+  background:linear-gradient(135deg,var(--violet),var(--amber),var(--violet));
+  background-size:200% 200%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:gradientShift 4s ease-in-out infinite;
+}
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero h1 .split-word{display:inline-block;opacity:0;transform:translateY(20px) blur(4px);animation:splitIn 0.6s ease-out forwards}
+.hero h1 .split-word:nth-child(1){animation-delay:0.1s}
+.hero h1 .split-word:nth-child(2){animation-delay:0.25s}
+.hero h1 .split-word:nth-child(3){animation-delay:0.4s}
+.hero h1 .split-word:nth-child(4){animation-delay:0.55s}
+.hero h1 .split-word:nth-child(5){animation-delay:0.7s}
+@keyframes splitIn{to{opacity:1;transform:translateY(0) blur(0)}}
+.hero p{
+  font-size:18px;font-weight:200;letter-spacing:0.025em;
+  line-height:1.6;color:var(--ash);margin-bottom:36px;max-width:480px;
+}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap}
+.hero-btn-primary{
+  padding:14px 36px;border-radius:999px;
+  background:var(--violet);color:var(--bone);
+  font-size:15px;font-weight:600;letter-spacing:0.021em;
+  border:none;cursor:pointer;transition:all 0.3s;
+  text-shadow:0 1px 2px rgba(0,0,0,0.2);
+  position:relative;overflow:hidden;display:inline-block;
+}
+.hero-btn-primary::before{
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
+  transition:left 0.5s;
+}
+.hero-btn-primary:hover::before{left:100%}
+.hero-btn-primary:hover{background:#6f3ee8;transform:translateY(-2px)}
+.hero-btn-primary.magnetic{transition:transform 0.15s ease-out}
+.hero-btn-secondary{
+  padding:14px 36px;border-radius:999px;
+  background:transparent;color:var(--amber);
+  font-size:15px;font-weight:600;letter-spacing:0.021em;
+  border:1.5px solid var(--amber);cursor:pointer;
+  transition:all 0.3s;display:inline-block;
+}
+.hero-btn-secondary:hover{background:rgba(255,184,41,0.08);transform:translateY(-2px)}
+.hero-btn-secondary.magnetic{transition:transform 0.15s ease-out}
+.hero-stats{
+  display:flex;gap:48px;margin-top:48px;
+}
+.hero-stat-value{
+  font-size:32px;font-weight:400;letter-spacing:-0.03em;color:var(--bone);
+}
+.hero-stat-label{
+  font-size:13px;font-weight:200;letter-spacing:0.05em;
+  color:var(--smoke);margin-top:4px;
+}
+.hero-scroll-hint{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--smoke);font-size:11px;font-weight:200;letter-spacing:0.05em;
+  animation:scrollBounce 2s ease-in-out infinite;opacity:0.4;
+}
+@keyframes scrollBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* ── Mock Telegram Chat ── */
+.hero-mockup{position:relative}
+.mock-chat{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(128,82,255,0.12);
+  border-radius:16px;overflow:hidden;
+  backdrop-filter:blur(20px);
+  transform:perspective(1000px) rotateY(-3deg) rotateX(2deg);
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 20px 60px rgba(128,82,255,0.08);
+}
+.mock-chat-header{
+  padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;gap:10px;
+}
+.mock-chat-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--violet);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;
+}
+.mock-chat-name{font-size:13px;font-weight:600;color:var(--bone)}
+.mock-chat-status{font-size:10px;color:var(--lichen)}
+.mock-chat-body{padding:16px}
+.mock-msg{margin-bottom:10px;display:flex;flex-direction:column}
+.mock-msg-bot{align-self:flex-start;max-width:85%}
+.mock-msg-user{align-self:flex-end;max-width:85%}
+.mock-bubble{
+  padding:8px 14px;border-radius:12px;
+  font-size:13px;line-height:1.5;
+  background:rgba(128,82,255,0.12);color:var(--ash);
+}
+.mock-msg-user .mock-bubble{
+  background:rgba(128,82,255,0.25);color:var(--bone);
+}
+.mock-msg .price-drop{color:var(--lichen);font-weight:600}
+.mock-msg .price-old{text-decoration:line-through;color:var(--smoke);font-size:11px}
+.mock-msg .price-new{color:var(--amber);font-weight:700;font-size:15px}
+.mock-msg-time{font-size:10px;color:var(--smoke);margin-top:3px;opacity:0.5}
+.mock-msg-bot .mock-msg-time{padding-left:14px}
+.mock-msg-user .mock-msg-time{text-align:right;padding-right:14px}
+.mock-floating-badge{
+  position:absolute;top:-12px;right:-12px;
+  background:var(--amber);color:var(--void);
+  font-size:11px;font-weight:700;padding:4px 12px;
+  border-radius:999px;
+  animation:floatUp 3s ease-in-out infinite;
+}
+
+/* ── Features ── */
+.features-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.section-label{
+  font-size:12px;font-weight:600;letter-spacing:0.05em;
+  color:var(--violet);text-transform:uppercase;margin-bottom:12px;
+}
+.section h2{
+  font-size:48px;font-weight:400;letter-spacing:-0.04em;
+  margin-bottom:16px;
+}
+.section-sub{
+  font-size:16px;font-weight:200;letter-spacing:0.025em;
+  color:var(--ash);margin-bottom:60px;max-width:500px;
+}
+.feature-card{
+  padding:32px;border-radius:12px;
+  border:1px solid rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.01);
+  transition:all 0.4s cubic-bezier(0.22,1,0.36,1);
+  position:relative;overflow:hidden;
+  cursor:default;
+}
+.feature-card::after{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(128,82,255,0.04),transparent 50%);
+  opacity:0;transition:opacity 0.4s;pointer-events:none;
+}
+.feature-card:hover{transform:translateY(-4px);border-color:rgba(128,82,255,0.15)}
+.feature-card:hover::after{opacity:1}
+.feature-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:rgba(128,82,255,0.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:20px;
+}
+.feature-card h3{
+  font-size:20px;font-weight:400;letter-spacing:-0.02em;
+  margin-bottom:10px;
+}
+.feature-card p{
+  font-size:14px;font-weight:200;letter-spacing:0.025em;
+  line-height:1.6;color:var(--ash);
+}
+.feature-card .feature-tag{
+  display:inline-block;margin-top:16px;
+  font-size:11px;font-weight:600;letter-spacing:0.05em;
+  padding:3px 10px;border-radius:999px;
+  border:1px solid rgba(128,82,255,0.15);color:var(--violet);
+}
+
+/* ── Savings Counter ── */
+.savings-banner{
+  text-align:center;padding:60px 32px;margin-bottom:60px;
+  border:1px solid rgba(255,184,41,0.1);
+  border-radius:12px;background:rgba(255,184,41,0.02);
+}
+.savings-banner .savings-label{
+  font-size:13px;font-weight:200;letter-spacing:0.05em;color:var(--smoke);margin-bottom:8px;
+}
+.savings-banner .savings-amount{
+  font-size:clamp(40px,5vw,64px);font-weight:400;letter-spacing:-0.04em;
+  color:var(--amber);
+}
+.savings-banner .savings-amount .counter{color:var(--amber)}
+
+/* ── How It Works ── */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+.step-card{text-align:center;padding:32px}
+.step-num{
+  width:48px;height:48px;border-radius:50%;
+  border:1.5px solid var(--violet);color:var(--violet);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:600;margin:0 auto 20px;
+  transition:all 0.3s;
+}
+.step-card:hover .step-num{background:var(--violet);color:var(--bone)}
+.step-card h3{font-size:20px;font-weight:400;margin-bottom:10px}
+.step-card p{font-size:14px;font-weight:200;color:var(--ash);line-height:1.6}
+
+/* ── Live Chart ── */
+.chart-wrapper{
+  max-width:700px;margin:0 auto;
+  background:rgba(255,255,255,0.01);border:1px solid rgba(128,82,255,0.08);
+  border-radius:12px;padding:48px 32px;
+}
+.chart-wrapper h3{
+  font-size:20px;font-weight:400;margin-bottom:8px;text-align:center;
+}
+.chart-wrapper p{
+  font-size:14px;color:var(--ash);text-align:center;margin-bottom:32px;
+  font-weight:200;letter-spacing:0.025em;
+}
+.chart-container svg{width:100%;height:auto;display:block}
+
+/* ── Testimonials ── */
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.testimonial-card{
+  padding:28px;border-radius:12px;
+  border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);
+  transition:all 0.3s;
+}
+.testimonial-card:hover{transform:translateY(-3px);border-color:rgba(128,82,255,0.12)}
+.testimonial-card .t-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--violet);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;margin-bottom:14px;
+}
+.testimonial-card .t-text{
+  font-size:14px;font-weight:200;line-height:1.7;color:var(--ash);margin-bottom:14px;
+  font-style:italic;
+}
+.testimonial-card .t-author{font-size:13px;font-weight:600;color:var(--bone)}
+.testimonial-card .t-role{font-size:11px;color:var(--smoke);font-weight:200;margin-top:2px}
+
+/* ── FAQ ── */
+.faq-list{max-width:700px;margin:0 auto}
+.faq-item{
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  padding:0;cursor:pointer;
+}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 0;font-size:16px;font-weight:400;color:var(--bone);
+  letter-spacing:-0.01em;transition:color 0.3s;
+}
+.faq-q:hover{color:var(--violet)}
+.faq-q .faq-icon{
+  font-size:18px;transition:transform 0.3s;color:var(--violet);
+}
+.faq-item.open .faq-q .faq-icon{transform:rotate(45deg)}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height 0.35s ease, padding 0.35s ease;
+  font-size:14px;font-weight:200;line-height:1.7;color:var(--ash);
+  padding:0;
+}
+.faq-item.open .faq-a{
+  max-height:300px;padding:0 0 20px 0;
+}
+
+/* ── Pricing ── */
+.pricing-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:800px;margin:0 auto;
+}
+.pricing-card{
+  padding:40px 32px;border-radius:12px;
+  border:1px solid rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.01);
+  position:relative;transition:all 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+.pricing-card.popular{
+  border-color:var(--violet);
+  animation:glowPulse 3s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 30px rgba(128,82,255,0.06)}
+  50%{box-shadow:0 0 60px rgba(128,82,255,0.15)}
+}
+.pricing-card:hover{transform:translateY(-4px)}
+.pricing-badge{
+  position:absolute;top:-10px;right:20px;
+  background:var(--violet);color:var(--bone);
+  font-size:10px;font-weight:700;letter-spacing:0.05em;
+  padding:4px 14px;border-radius:999px;
+}
+.pricing-name{
+  font-size:24px;font-weight:400;letter-spacing:-0.02em;margin-bottom:8px;
+}
+.pricing-sub{
+  font-size:13px;font-weight:200;color:var(--smoke);margin-bottom:24px;
+}
+.pricing-price{
+  font-size:48px;font-weight:400;letter-spacing:-0.04em;margin-bottom:4px;
+}
+.pricing-price .pricing-star{
+  font-size:20px;color:var(--amber);vertical-align:super;
+}
+.pricing-desc{font-size:13px;color:var(--ash);margin-bottom:8px;font-weight:200}
+.pricing-rub{
+  font-size:14px;color:var(--smoke);font-weight:200;margin-bottom:24px;
+}
+.pricing-features{list-style:none;margin-bottom:32px}
+.pricing-features li{
+  padding:6px 0;font-size:14px;color:var(--ash);
+  font-weight:200;letter-spacing:0.025em;
+  display:flex;align-items:center;gap:8px;
+}
+.pricing-features li::before{content:'✓';color:var(--violet);font-weight:700}
+.pricing-btn{
+  display:block;text-align:center;padding:12px;
+  border-radius:999px;font-size:14px;font-weight:600;
+  letter-spacing:0.021em;border:none;cursor:pointer;
+  transition:all 0.3s;
+}
+.pricing-btn.primary{background:var(--violet);color:var(--bone);text-shadow:0 1px 2px rgba(0,0,0,0.2)}
+.pricing-btn.primary:hover{background:#6f3ee8;transform:translateY(-1px)}
+.pricing-btn.secondary{
+  background:transparent;border:1.5px solid rgba(255,255,255,0.1);color:var(--bone);
+}
+.pricing-btn.secondary:hover{border-color:var(--violet)}
+
+/* ── Free Trial Banner ── */
+.trial-banner{
+  text-align:center;margin-top:40px;padding:24px;
+  border:1px dashed rgba(128,82,255,0.2);border-radius:12px;
+  background:rgba(128,82,255,0.02);
+}
+.trial-banner p{font-size:14px;color:var(--ash);font-weight:200}
+.trial-banner strong{color:var(--violet)}
+
+/* ── CTA ── */
+.cta-section{
+  text-align:center;padding:120px 0;
+  position:relative;z-index:2;
+}
+.cta-section h2{
+  font-size:48px;font-weight:400;letter-spacing:-0.04em;
+  margin-bottom:16px;
+}
+.cta-section p{
+  font-size:16px;font-weight:200;color:var(--ash);
+  letter-spacing:0.025em;margin-bottom:40px;max-width:500px;margin-inline:auto;
+}
+.cta-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* ── Footer ── */
+footer{
+  border-top:1px solid rgba(128,82,255,0.08);
+  padding:40px 0;position:relative;z-index:2;
+}
+.footer-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:var(--max-w);margin:0 auto;padding:0 24px;
+}
+.footer-copy{font-size:13px;color:var(--smoke);font-weight:200}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:13px;color:var(--smoke);transition:color 0.3s;font-weight:200}
+.footer-links a:hover{color:var(--bone)}
+
+/* ── Scroll Reveal ── */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 0.8s cubic-bezier(0.22,1,0.36,1),transform 0.8s cubic-bezier(0.22,1,0.36,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-scale{opacity:0;transform:scale(0.88);transition:opacity 0.7s cubic-bezier(0.34,1.56,0.64,1),transform 0.7s cubic-bezier(0.34,1.56,0.64,1)}
+.reveal-scale.visible{opacity:1;transform:scale(1)}
+
+/* ── Shimmer ── */
+.shimmer{position:relative;overflow:hidden}
+.shimmer::after{
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
+  animation:shine 3s ease-in-out infinite;
+}
+@keyframes shine{0%,100%{left:-100%}50%{left:100%}}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  .hero .container{grid-template-columns:1fr;gap:48px;text-align:center}
+  .hero p{margin-inline:auto}
+  .hero-actions{justify-content:center}
+  .hero-stats{justify-content:center}
+  .features-grid{grid-template-columns:1fr}
+  .steps-grid{grid-template-columns:1fr;max-width:400px;margin-inline:auto}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px}
+  .testimonials-grid{grid-template-columns:1fr}
+  .section h2{font-size:36px}
+  .cta-section h2{font-size:36px}
+}
+@media(max-width:540px){
+  .hero-stat-value{font-size:24px}
+  .hero-stats{gap:24px}
+  .pricing-price{font-size:36px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+  .mock-chat{transform:none!important}
+  .split-word{opacity:1!important;transform:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="scroll-progress"></div>
+<div class="bg-mesh">
+  <div class="mesh-blob"></div>
+  <div class="mesh-blob"></div>
+  <div class="mesh-blob"></div>
+</div>
+<div class="bg-noise"></div>
+<div id="cursor-glow"></div>
+<canvas id="particles-canvas"></canvas>
+
+<!-- Navbar -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="logo-icon">D</div>
+      DealBot63
+    </div>
+    <div class="nav-links">
+      <a href="#features">Возможности</a>
+      <a href="#how">Как работает</a>
+      <a href="#pricing">Тарифы</a>
+      <a href="#cta" class="nav-btn">Запустить бота</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Меню">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#features" class="mobile-link">Возможности</a>
+  <a href="#how" class="mobile-link">Как работает</a>
+  <a href="#pricing" class="mobile-link">Тарифы</a>
+  <a href="#cta" class="mobile-link">Запустить бота</a>
+</div>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div>
+      <div class="hero-badge">⚡ Telegram Bot · Ozon Мониторинг</div>
+      <h1>
+        <span class="split-word">Лови</span>
+        <span class="split-word gradient-text">лучшие</span>
+        <span class="split-word gradient-text">цены</span>
+        <span class="split-word">на</span>
+        <span class="split-word">Ozon</span>
+      </h1>
+      <p>
+        DealBot63 — умный Telegram бот, который отслеживает цены на Ozon 
+        в реальном времени. Мгновенные уведомления о снижении цен, 
+        графики динамики и управление списком товаров.
+      </p>
+      <div class="hero-actions">
+        <a href="https://t.me/DealBot63_bot" class="hero-btn-primary shimmer magnetic" target="_blank" rel="noopener noreferrer">
+          🚀 Запустить бота
+        </a>
+        <a href="#features" class="hero-btn-secondary magnetic">
+          Узнать больше →
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-value"><span class="counter" data-target="1284">0</span></div>
+          <div class="hero-stat-label">активных пользователей</div>
+        </div>
+        <div>
+          <div class="hero-stat-value"><span class="counter" data-target="15720">0</span></div>
+          <div class="hero-stat-label">товаров отслежено</div>
+        </div>
+        <div>
+          <div class="hero-stat-value"><span class="counter" data-target="89">0</span>K+</div>
+          <div class="hero-stat-label">снижений цен</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-mockup">
+      <div class="mock-floating-badge">LIVE</div>
+      <div class="mock-chat" id="tilt-mockup">
+        <div class="mock-chat-header">
+          <div class="mock-chat-avatar">D</div>
+          <div>
+            <div class="mock-chat-name">DealBot63</div>
+            <div class="mock-chat-status">● online</div>
+          </div>
+        </div>
+        <div class="mock-chat-body">
+          <div class="mock-msg mock-msg-bot">
+            <div class="mock-bubble">
+              👋 Привет! Я слежу за ценами на Ozon. 
+              Отправь мне <strong>ссылку на товар</strong> или 
+              <strong>название</strong> — начнём!
+            </div>
+            <div class="mock-msg-time">12:30</div>
+          </div>
+          <div class="mock-msg mock-msg-user">
+            <div class="mock-bubble">
+              https://www.ozon.ru/product/12345
+            </div>
+            <div class="mock-msg-time">12:31</div>
+          </div>
+          <div class="mock-msg mock-msg-bot">
+            <div class="mock-bubble">
+              ✅ Товар добавлен!<br>
+              <span class="price-old">3 499 ₽</span><br>
+              <span class="price-new">2 799 ₽</span> 
+              <span class="price-drop">▼ -20%</span>
+            </div>
+            <div class="mock-msg-time">12:31</div>
+          </div>
+          <div class="mock-msg mock-msg-bot">
+            <div class="mock-bubble" style="background:rgba(255,184,41,0.12);border:1px solid rgba(255,184,41,0.15)">
+              🔔 <strong>СНИЖЕНИЕ ЦЕНЫ!</strong><br>
+              iPhone 15 Pro Max<br>
+              <span class="price-old">124 990 ₽</span> → 
+              <span class="price-new">109 990 ₽</span>
+              <span class="price-drop" style="color:var(--amber)">▼ -12%</span>
+            </div>
+            <div class="mock-msg-time">12:35</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>Листайте</span>
+    <span>↓</span>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Возможности</div>
+      <h2>Всё для умного<br>шопинга на Ozon</h2>
+      <p class="section-sub">Мониторинг, аналитика и уведомления — всё в одном боте</p>
+    </div>
+
+    <!-- Savings Counter Banner -->
+    <div class="savings-banner reveal">
+      <div class="savings-label">💰 Пользователи уже сэкономили</div>
+      <div class="savings-amount"><span class="counter" data-target="2847000">0</span> ₽</div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal" style="transition-delay:0.05s">
+        <div class="feature-icon">📡</div>
+        <h3>Мониторинг 24/7</h3>
+        <p>Автоматическая проверка цен каждые 30 минут. Ни одно снижение не пройдёт мимо вас.</p>
+        <span class="feature-tag">в реальном времени</span>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.1s">
+        <div class="feature-icon">🔔</div>
+        <h3>Мгновенные оповещения</h3>
+        <p>Моментальное уведомление в Telegram при изменении цены. Настраиваемый порог срабатывания.</p>
+        <span class="feature-tag">push-уведомления</span>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.15s">
+        <div class="feature-icon">📊</div>
+        <h3>Графики цен</h3>
+        <p>Дневные, недельные и месячные графики динамики цены. Принимайте решение на основе данных.</p>
+        <span class="feature-tag">аналитика</span>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.2s">
+        <div class="feature-icon">📋</div>
+        <h3>Список товаров</h3>
+        <p>Удобное управление списком отслеживаемых товаров. Сортировка по цене, скидке, дате.</p>
+        <span class="feature-tag">менеджмент</span>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.25s">
+        <div class="feature-icon">🎯</div>
+        <h3>Умные триггеры</h3>
+        <p>Задайте целевую цену или процент снижения — бот оповестит вас в момент достижения.</p>
+        <span class="feature-tag">кастомные триггеры</span>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.3s">
+        <div class="feature-icon">📱</div>
+        <h3>Поддержка 24/7</h3>
+        <p>Техподдержка в Telegram. Поможем настроить, добавить товары, ответим на вопросы.</p>
+        <span class="feature-tag">всегда на связи</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- Testimonials -->
+<section class="section">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-label">Отзывы</div>
+      <h2>Кому уже помогли</h2>
+      <p class="section-sub" style="margin-inline:auto">Реальные пользователи DealBot63 делятся опытом</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal" style="transition-delay:0.05s">
+        <div class="t-avatar">A</div>
+        <div class="t-text">«Отслеживаю AirPods Pro — через неделю поймал скидку 4 000 ₽. Бот окупился на первом же товаре!»</div>
+        <div class="t-author">Алексей</div>
+        <div class="t-role">обычный покупатель</div>
+      </div>
+      <div class="testimonial-card reveal" style="transition-delay:0.1s">
+        <div class="t-avatar">М</div>
+        <div class="t-text">«Как перекуп — мастхев. Слежу за 50+ товарами, VIP проверка каждые 10 минут. Успеваю первым на скидки.»</div>
+        <div class="t-author">Марат</div>
+        <div class="t-role">перепродавец на Ozon</div>
+      </div>
+      <div class="testimonial-card reveal" style="transition-delay:0.15s">
+        <div class="t-avatar">Е</div>
+        <div class="t-text">«Раньше сидела и обновляла страницы руками. Теперь бот сам говорит когда цена упала. Экономия времени и нервов.»</div>
+        <div class="t-author">Елена</div>
+        <div class="t-role">мама в декрете</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- How It Works -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-label">Как это работает</div>
+      <h2>Три простых шага</h2>
+      <p class="section-sub" style="margin-inline:auto">Начать отслеживать цены на Ozon проще простого</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card reveal" style="transition-delay:0.05s">
+        <div class="step-num">1</div>
+        <h3>Добавьте товар</h3>
+        <p>Отправьте боту ссылку на товар с Ozon или найдите по названию через встроенный поиск</p>
+      </div>
+      <div class="step-card reveal" style="transition-delay:0.1s">
+        <div class="step-num">2</div>
+        <h3>Настройте триггер</h3>
+        <p>Укажите желаемую цену или процент снижения — бот оповестит вас при достижении цели</p>
+      </div>
+      <div class="step-card reveal" style="transition-delay:0.15s">
+        <div class="step-num">3</div>
+        <h3>Получайте оповещения</h3>
+        <p>Мгновенные уведомления о снижении цен в Telegram. Экономьте на каждой покупке!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- Live Chart -->
+<section class="section">
+  <div class="container">
+    <div class="chart-wrapper reveal-scale" id="chartWrapper">
+      <h3>📈 Динамика цен</h3>
+      <p>Пример графика отслеживания цены на iPhone 15 Pro Max</p>
+      <div class="chart-container">
+        <svg viewBox="0 0 500 120" preserveAspectRatio="none" aria-label="График динамики цен" role="img">
+          <title>Динамика цен iPhone 15 Pro Max</title>
+          <defs>
+            <linearGradient id="cg1" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#8052ff"/>
+              <stop offset="100%" stop-color="#ffb829"/>
+            </linearGradient>
+            <linearGradient id="cgf" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8052ff" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#8052ff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path class="chart-fill" id="chartFillPath"/>
+          <path class="chart-line" id="chartLinePath" stroke-dasharray="600" stroke-dashoffset="600"
+                fill="none" stroke="url(#cg1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="filter:drop-shadow(0 0 6px rgba(128,82,255,0.3));"/>
+          <circle class="chart-dot" id="chartDot" r="3.5" fill="#ffb829"
+                  filter="drop-shadow(0 0 4px rgba(255,184,41,0.5))"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-label">FAQ</div>
+      <h2>Частые вопросы</h2>
+      <p class="section-sub" style="margin-inline:auto">Всё, что вы хотели знать о DealBot63</p>
+    </div>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <div class="faq-q">Можно ли попробовать бесплатно? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Да! Вы можете отслеживать до 3 товаров бесплатно без ограничения по времени. Если хотите больше — достаточно одного платежа звёздами.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Как оплатить звёздами Telegram? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Всё внутри бота: запустите @DealBot63_bot, нажмите «Тарифы», выберите план — оплата происходит встроенным платёжным методом Telegram Stars. Мгновенно, без комиссии.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Что если цена вырастет, а не упадёт? <span class="faq-icon">+</span></div>
+        <div class="faq-a">DealBot63 отслеживает любые изменения цены. Вы можете настроить оповещение только на снижение, только на рост, или на оба направления.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Сколько товаров можно отслеживать? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Бесплатно — до 3 товаров. Premium (100⭐) — безлимит. VIP (150⭐) — безлимит + проверка каждые 10 минут.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Можно ли отменить подписку? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Платежи единоразовые — вы платите один раз и пользуетесь навсегда. Никаких ежемесячных списаний.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Безопасно ли передавать ссылки боту? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Да! Бот использует только публичные данные карточек товаров Ozon. Никаких личных данных, паролей или доступа к аккаунту.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- Pricing -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-label">Тарифы</div>
+      <h2>Выберите свой план</h2>
+      <p class="section-sub" style="margin-inline:auto">Оплата звёздами Telegram — быстро и удобно<br><span style="font-size:13px;color:var(--smoke)">100⭐ ≈ 200₽ · 150⭐ ≈ 300₽</span></p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal" style="transition-delay:0.05s">
+        <div class="pricing-name">Premium</div>
+        <div class="pricing-sub">Для активных покупателей</div>
+        <div class="pricing-price">100 <span class="pricing-star">⭐</span></div>
+        <div class="pricing-desc">≈ 200 ₽</div>
+        <div class="pricing-rub">Единоразовый платёж · навсегда</div>
+        <ul class="pricing-features">
+          <li>Неограниченное количество товаров</li>
+          <li>Проверка цен каждые 30 мин</li>
+          <li>Расширенная аналитика и графики</li>
+          <li>Приоритетные уведомления</li>
+          <li>Экспорт истории цен</li>
+        </ul>
+        <a href="https://t.me/DealBot63_bot" class="pricing-btn primary" target="_blank" rel="noopener noreferrer">Выбрать Premium</a>
+      </div>
+      <div class="pricing-card popular reveal" style="transition-delay:0.1s">
+        <div class="pricing-badge">🔥 ХИТ</div>
+        <div class="pricing-name">VIP</div>
+        <div class="pricing-sub">Для профи и перекупов</div>
+        <div class="pricing-price">150 <span class="pricing-star">⭐</span></div>
+        <div class="pricing-desc">≈ 300 ₽</div>
+        <div class="pricing-rub">Единоразовый платёж · навсегда</div>
+        <ul class="pricing-features">
+          <li>Всё из Premium</li>
+          <li>Проверка цен каждые 10 минут</li>
+          <li>Экспорт данных в CSV/Excel</li>
+          <li>Персональная поддержка 24/7</li>
+          <li>Ранний доступ к новым функциям</li>
+        </ul>
+        <a href="https://t.me/DealBot63_bot" class="pricing-btn primary shimmer" target="_blank" rel="noopener noreferrer">Выбрать VIP</a>
+      </div>
+    </div>
+    <div class="trial-banner reveal">
+      <p>🎁 <strong>3 товара бесплатно</strong> — попробуйте перед покупкой. Без карты, без обязательств.</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-glow"></div>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="container reveal">
+    <h2>Готовы начать<br>экономить?</h2>
+    <p>Присоединяйтесь к тысячам пользователей, которые уже отслеживают цены на Ozon с DealBot63</p>
+    <div class="cta-actions">
+      <a href="https://t.me/DealBot63_bot" class="hero-btn-primary shimmer" target="_blank" rel="noopener noreferrer">
+        🚀 Запустить DealBot63
+      </a>
+      <a href="#features" class="hero-btn-secondary">
+        Все возможности →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-copy">© 2026 DealBot63 · Ozon Price Monitor</div>
+    <div class="footer-links">
+      <a href="https://t.me/DealBot63_bot" target="_blank" rel="noopener noreferrer">Telegram</a>
+      <a href="https://t.me/DealBot63_bot" target="_blank" rel="noopener noreferrer">Поддержка</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Helper: reduced motion check ──
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ── Scroll Progress Bar ──
+(function(){
+  const bar = document.getElementById('scroll-progress');
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+  }, { passive: true });
+})();
+
+// ── Cursor Glow ──
+(function(){
+  if(prefersReducedMotion) return;
+  const g = document.getElementById('cursor-glow');
+  let rafId = null, mx = 0, my = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; if(!rafId) rafId = requestAnimationFrame(tick); });
+  function tick(){ g.style.left = mx+'px'; g.style.top = my+'px'; rafId = null; }
+})();
+
+// ── Magnetic Buttons ──
+(function(){
+  if(prefersReducedMotion) return;
+  document.querySelectorAll('.magnetic').forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const r = btn.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width/2) * 0.15;
+      const y = (e.clientY - r.top - r.height/2) * 0.15;
+      btn.style.transform = `translate(${x}px, ${y}px)`;
+    });
+    btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+  });
+})();
+
+// ── Particles Canvas ──
+(function(){
+  if(prefersReducedMotion) return;
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [], mouseX = -1e4, mouseY = -1e4;
+  let animId = null;
+  let isVisible = true;
+
+  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize(); addEventListener('resize', resize);
+
+  document.addEventListener('visibilitychange', () => {
+    isVisible = !document.hidden;
+    if(isVisible && animId === null) animate();
+    else if(!isVisible && animId !== null){ cancelAnimationFrame(animId); animId = null; }
+  });
+
+  const colors = [
+    {r:128,g:82,b:255}, // violet
+    {r:255,g:184,b:41}, // amber
+    {r:21,g:132,b:110}  // lichen
+  ];
+
+  class Particle {
+    constructor(){
+      this.x = Math.random()*canvas.width;
+      this.y = Math.random()*canvas.height;
+      this.size = Math.random()*2 + 0.3;
+      this.sx = (Math.random()-0.5)*0.2;
+      this.sy = (Math.random()-0.5)*0.2;
+      this.o = Math.random()*0.3 + 0.1;
+      this.c = colors[Math.floor(Math.random()*colors.length)];
+    }
+    update(){
+      this.x += this.sx; this.y += this.sy;
+      const dx = mouseX - this.x, dy = mouseY - this.y, d = Math.sqrt(dx*dx+dy*dy);
+      if(d < 150){ const f = (150-d)/150*0.3; this.x -= dx/d*f; this.y -= dy/d*f; }
+      if(this.x<0||this.x>canvas.width||this.y<0||this.y>canvas.height){
+        this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height;
+      }
+    }
+    draw(){
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${this.c.r},${this.c.g},${this.c.b},${this.o})`; ctx.fill();
+    }
+  }
+  const count = Math.min(Math.floor(canvas.width*canvas.height/15000),80);
+  for(let i=0;i<count;i++) particles.push(new Particle());
+
+  function animate(){
+    if(!isVisible){ animId = null; return; }
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx+dy*dy);
+        if(d < 160){
+          ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(128,82,255,${(1-d/160)*0.1})`;
+          ctx.lineWidth = 0.4; ctx.stroke();
+        }
+      }
+    }
+    animId = requestAnimationFrame(animate);
+  }
+  animate();
+  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+})();
+
+// ── Scroll Reveal ──
+(function(){
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal, .reveal-scale').forEach(el => obs.observe(el));
+})();
+
+// ── Counter Animation ──
+(function(){
+  const counters = document.querySelectorAll('.counter');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        const el = e.target;
+        const target = parseInt(el.dataset.target);
+        const dur = 2000;
+        const start = performance.now();
+        // Fallback: show "--" during init, not "0"
+        if(target > 0) el.textContent = '—';
+        function update(now){
+          const p = Math.min((now-start)/dur,1);
+          const ez = 1 - Math.pow(1-p,3);
+          el.textContent = Math.floor(ez * target);
+          if(p < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+        obs.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(c => obs.observe(c));
+})();
+
+// ── Chart Animation ──
+(function(){
+  if(prefersReducedMotion) return;
+  let chartIntervalId = null;
+  const chartObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        const w = 500, h = 120, count = 18;
+        const pts = [];
+        for(let i=0;i<count;i++) pts.push({x:(i/(count-1))*w, y:25+Math.random()*70});
+
+        function buildPath(p){
+          let d = `M ${p[0].x} ${p[0].y}`;
+          for(let i=1;i<p.length;i++){ const cx=(p[i-1].x+p[i].x)/2; d+=` Q ${cx} ${p[i-1].y}, ${p[i].x} ${p[i].y}`; }
+          return d;
+        }
+        const linePath = document.getElementById('chartLinePath');
+        const fillPath = document.getElementById('chartFillPath');
+        const dot = document.getElementById('chartDot');
+        if(!linePath || !fillPath || !dot) return;
+
+        linePath.setAttribute('d', buildPath(pts));
+        fillPath.setAttribute('d', buildPath(pts)+` L ${pts[count-1].x} ${h} L ${pts[0].x} ${h} Z`);
+        linePath.style.transition = 'stroke-dashoffset 1.5s ease-out';
+        linePath.style.strokeDashoffset = '0';
+        dot.setAttribute('cx', pts[count-1].x);
+        dot.setAttribute('cy', pts[count-1].y);
+
+        chartIntervalId = setInterval(() => {
+          if(document.hidden) return;
+          const targets = pts.map(p => ({...p, y:25+Math.random()*70}));
+          function lerp(){
+            let done = true;
+            for(let i=0;i<pts.length;i++){
+              pts[i].x += (targets[i].x-pts[i].x)*0.06;
+              pts[i].y += (targets[i].y-pts[i].y)*0.06;
+              if(Math.abs(pts[i].y-targets[i].y) > 0.5) done = false;
+            }
+            linePath.setAttribute('d', buildPath(pts));
+            fillPath.setAttribute('d', buildPath(pts)+` L ${pts[count-1].x} ${h} L ${pts[0].x} ${h} Z`);
+            dot.setAttribute('cx', pts[count-1].x);
+            dot.setAttribute('cy', pts[count-1].y);
+            if(!done) requestAnimationFrame(lerp);
+          }
+          lerp();
+        }, 3000);
+        chartObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  const chartEl = document.getElementById('chartWrapper');
+  if(chartEl) chartObs.observe(chartEl);
+
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => { if(chartIntervalId) clearInterval(chartIntervalId); });
+})();
+
+// ── 3D Tilt on Mockup ──
+(function(){
+  if(prefersReducedMotion) return;
+  const mockup = document.getElementById('tilt-mockup');
+  if(!mockup) return;
+  mockup.addEventListener('mousemove', e => {
+    const r = mockup.getBoundingClientRect();
+    const x = (e.clientX - r.left)/r.width - 0.5;
+    const y = (e.clientY - r.top)/r.height - 0.5;
+    mockup.style.transform = `perspective(1000px) rotateY(${x*-6}deg) rotateX(${y*4}deg)`;
+  });
+  mockup.addEventListener('mouseleave', () => {
+    mockup.style.transform = 'perspective(1000px) rotateY(-3deg) rotateX(2deg)';
+  });
+})();
+
+// ── Feature Card Light Tracking ──
+(function(){
+  document.querySelectorAll('.feature-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left)/r.width*100)+'%');
+      card.style.setProperty('--my', ((e.clientY - r.top)/r.height*100)+'%');
+    });
+  });
+})();
+
+// ── Hamburger Menu ──
+(function(){
+  const hamburger = document.getElementById('hamburger');
+  const menu = document.getElementById('mobileMenu');
+  if(!hamburger || !menu) return;
+  hamburger.addEventListener('click', () => {
+    const open = menu.classList.toggle('open');
+    hamburger.classList.toggle('active');
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+  document.querySelectorAll('.mobile-link').forEach(link => {
+    link.addEventListener('click', () => {
+      menu.classList.remove('open');
+      hamburger.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+  });
+})();
+
+// ── FAQ Accordion ──
+(function(){
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      // Close others
+      document.querySelectorAll('.faq-item.open').forEach(other => { if(other !== item) other.classList.remove('open'); });
+      item.classList.toggle('open');
+    });
+  });
+})();
+</script>
+</body>
+</html>

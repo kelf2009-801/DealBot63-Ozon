@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DealBot63 — Умный мониторинг цен на Ozon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="description" content="Telegram бот для отслеживания цен на Ozon. Мгновенные оповещения о снижении цен, графики, умные триггеры.">
+<meta property="og:title" content="DealBot63 — Мониторинг цен Ozon">
+<meta property="og:description" content="Отслеживай цены на Ozon и получай уведомления о снижении">
+<meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='%238052ff'/><text x='100' y='130' text-anchor='middle' fill='white' font-size='80' font-family='sans-serif'>D</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238052ff'/><text x='16' y='23' text-anchor='middle' fill='white' font-size='20' font-family='sans-serif'>D</text></svg>">
+<style>
+/* ═══════════════════════════════════════
+   DALLA COSMIC — Деловая вселенная
+   ═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:18px}
+body{
+  background:#000;color:#fff;
+  font-family:'Inter','SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif;
+  overflow-x:hidden;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Токены ── */
+:root{
+  --violet:#8052ff;--amber:#ffb829;--lichen:#15846e;
+  --bone:#fff;--ash:#bdbdbd;--smoke:#9a9a9a;
+  --hair:rgba(255,255,255,0.08);
+  --card-bg:rgba(255,255,255,0.02);
+  --max-w:1200px;--gap:60px;
+  --font-display:'Space Grotesk','Inter',sans-serif;
+}
+a{color:var(--amber);text-decoration:none;transition:color .2s}
+a:hover{color:#ffd060}
+img{max-width:100%;height:auto}
+
+/* ── Секции ── */
+section{padding:80px 24px;position:relative}
+.section-inner{max-width:var(--max-w);margin:0 auto;width:100%}
+.section-label{
+  font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--violet);margin-bottom:12px;
+}
+.section-title{
+  font-family:var(--font-display);font-size:clamp(28px,5vw,48px);
+  font-weight:400;letter-spacing:-.03em;margin-bottom:16px;line-height:1.1;
+}
+.section-sub{
+  color:var(--smoke);font-size:16px;max-width:600px;line-height:1.6;
+}
+
+/* ── Разделители ── */
+.section-divider{
+  height:1px;border:none;
+  background:linear-gradient(90deg,transparent,rgba(128,82,255,0.3),transparent);
+  margin:0;
+}
+
+/* ── Сетка ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:40px}
+
+/* ── Скролл-прогресс ── */
+#scroll-bar{
+  position:fixed;top:0;left:0;height:3px;background:var(--violet);
+  z-index:9999;width:0%;transition:width 50ms linear;
+}
+
+/* ── Particle Canvas ── */
+#particle-canvas{
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  pointer-events:none;z-index:0;
+}
+
+/* ── Gradient Mesh ── */
+.mesh-blob{
+  position:fixed;border-radius:50%;filter:blur(120px);opacity:.12;pointer-events:none;z-index:0;
+  animation:meshFloat 20s ease-in-out infinite;
+}
+.mesh-blob:nth-of-type(1){width:600px;height:600px;background:var(--violet);top:-15%;left:-10%;animation-delay:0s}
+.mesh-blob:nth-of-type(2){width:400px;height:400px;background:var(--amber);bottom:-10%;right:-5%;animation-delay:-7s;opacity:.08}
+.mesh-blob:nth-of-type(3){width:350px;height:350px;background:var(--lichen);top:50%;left:50%;animation-delay:-14s;opacity:.06}
+@keyframes meshFloat{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(40px,-30px) scale(1.05)}
+  66%{transform:translate(-20px,40px) scale(.95)}
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--hair);
+}
+.nav-logo{font-size:20px;font-weight:600;color:var(--bone);font-family:var(--font-display)}
+.nav-logo span{color:var(--violet)}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{font-size:14px;color:var(--smoke);font-weight:500;letter-spacing:.02em}
+.nav-links a:hover{color:var(--bone)}
+.nav-cta{
+  background:var(--violet);color:#fff!important;padding:8px 20px;
+  border-radius:100px;font-size:13px!important;font-weight:600!important;
+  transition:transform .2s,box-shadow .2s;
+}
+.nav-cta:hover{transform:scale(1.05);box-shadow:0 0 30px rgba(128,82,255,0.3)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:5px}
+.hamburger span{display:block;width:24px;height:2px;background:var(--bone);border-radius:2px;transition:.3s}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding-top:100px;padding-bottom:60px;
+  position:relative;z-index:1;
+}
+.hero-inner{max-width:var(--max-w);margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.hero h1{
+  font-family:var(--font-display);
+  font-size:clamp(36px,6vw,78px);
+  font-weight:400;letter-spacing:-.04em;line-height:.9;
+  margin-bottom:20px;
+}
+.hero h1 .highlight{color:var(--violet)}
+.hero p{color:var(--smoke);font-size:17px;max-width:500px;margin-bottom:32px;letter-spacing:.025em;line-height:1.6}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap}
+.btn-primary,.btn-secondary{
+  padding:14px 32px;border-radius:100px;font-size:15px;font-weight:600;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;display:inline-block;border:none;
+}
+.btn-primary{background:var(--violet);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.2)}
+.btn-primary:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(128,82,255,0.35)}
+.btn-secondary{background:transparent;color:var(--amber);border:1px solid rgba(255,184,41,0.3)}
+.btn-secondary:hover{background:rgba(255,184,41,0.08);transform:scale(1.05)}
+
+/* ── Mock Chat ── */
+.mock-chat{
+  background:rgba(255,255,255,0.03);border:1px solid var(--hair);
+  border-radius:16px;overflow:hidden;backdrop-filter:blur(10px);
+  perspective:1000px;transform-style:preserve-3d;
+  transition:transform .1s ease-out;
+}
+.mock-chat-header{
+  display:flex;align-items:center;gap:12px;padding:16px 20px;
+  border-bottom:1px solid var(--hair);
+}
+.mock-chat-avatar{
+  width:36px;height:36px;border-radius:50%;background:var(--violet);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:#fff;
+}
+.mock-chat-name{font-size:14px;font-weight:600;color:var(--bone)}
+.mock-chat-status{font-size:11px;color:#34c759}
+.mock-chat-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px;min-height:300px}
+.mock-msg{display:flex;max-width:80%}
+.mock-msg-bot{align-self:flex-start}
+.mock-msg-user{align-self:flex-end}
+.mock-bubble{
+  padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.4;
+  background:rgba(255,255,255,0.06);
+}
+.mock-msg-bot .mock-bubble{border-bottom-left-radius:4px}
+.mock-msg-user .mock-bubble{
+  background:var(--violet);color:#fff;border-bottom-right-radius:4px;
+}
+.price-old{text-decoration:line-through;color:var(--smoke);font-size:13px}
+.price-new{color:var(--amber);font-size:18px;font-weight:700;display:block;margin-top:4px}
+.alert-bubble{
+  background:rgba(255,184,41,0.1)!important;
+  border:1px solid rgba(255,184,41,0.2)!important;
+}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:40px;text-align:center}
+.stat-num{font-family:var(--font-display);font-size:clamp(36px,5vw,64px);font-weight:300;color:var(--violet);letter-spacing:-.03em}
+.stat-num span{display:inline-block}
+.stat-label{color:var(--smoke);font-size:14px;margin-top:4px;letter-spacing:.02em}
+
+/* ── Savings Banner ── */
+.savings-banner{
+  background:linear-gradient(135deg,rgba(128,82,255,0.1),rgba(255,184,41,0.05));
+  border:1px solid rgba(128,82,255,0.2);border-radius:16px;
+  padding:32px 40px;text-align:center;margin-top:40px;
+}
+.savings-num{font-family:var(--font-display);font-size:clamp(32px,4vw,52px);font-weight:400;color:var(--amber);letter-spacing:-.02em}
+.savings-label{color:var(--smoke);font-size:15px;margin-top:4px}
+
+/* ── Feature Cards ── */
+.card{
+  background:var(--card-bg);border:1px solid var(--hair);
+  border-radius:12px;padding:28px 24px;
+  display:flex;flex-direction:column;gap:12px;
+  transition:transform .3s,border-color .3s;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(128,82,255,0.2)}
+.card-icon{font-size:28px;line-height:1}
+.card-title{font-size:18px;font-weight:500;color:var(--bone);font-family:var(--font-display)}
+.card-text{color:var(--smoke);font-size:14px;line-height:1.6;flex:1}
+.card-tag{
+  display:inline-block;padding:4px 12px;border-radius:100px;
+  font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  background:rgba(128,82,255,0.1);color:var(--violet);align-self:flex-start;
+}
+
+/* ── How It Works ── */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:40px;counter-reset:step}
+.step{text-align:center;position:relative;padding:24px}
+.step::before{
+  counter-increment:step;content:counter(step);
+  display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:50%;
+  background:rgba(128,82,255,0.1);color:var(--violet);
+  font-size:16px;font-weight:700;margin:0 auto 16px;
+  font-family:var(--font-display);
+}
+.step-title{font-size:18px;font-weight:500;color:var(--bone);margin-bottom:8px}
+.step-text{color:var(--smoke);font-size:14px;line-height:1.6}
+.step-arrow{
+  position:absolute;top:44px;right:-16px;color:var(--hair);
+  font-size:24px;display:none;
+}
+.step:not(:last-child) .step-arrow{display:block}
+
+/* ── Testimonials ── */
+.testimonial-card{
+  background:var(--card-bg);border:1px solid var(--hair);
+  border-radius:12px;padding:28px 24px;text-align:center;
+}
+.t-avatar{
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--violet),rgba(128,82,255,0.3));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;font-size:20px;font-weight:600;color:#fff;
+}
+.t-text{color:var(--ash);font-size:15px;line-height:1.7;margin-bottom:16px;font-style:italic}
+.t-author{font-weight:600;color:var(--bone);font-size:14px}
+.t-role{color:var(--smoke);font-size:12px;margin-top:2px}
+
+/* ── Live Chart ── */
+.chart-container{
+  background:var(--card-bg);border:1px solid var(--hair);
+  border-radius:12px;padding:24px;margin-top:40px;
+  max-width:600px;margin-left:auto;margin-right:auto;
+}
+.chart-container svg{width:100%;height:auto;display:block}
+
+/* ── FAQ ── */
+.faq-list{max-width:700px;margin:40px auto 0}
+.faq-item{
+  border-bottom:1px solid var(--hair);padding:20px 0;
+  cursor:pointer;user-select:none;
+}
+.faq-question{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:16px;font-weight:500;color:var(--bone);
+}
+.faq-question .icon{font-size:20px;color:var(--violet);transition:transform .3s;display:inline-block}
+.faq-item.open .faq-question .icon{transform:rotate(45deg)}
+.faq-answer{
+  max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;
+  color:var(--smoke);font-size:14px;line-height:1.6;
+}
+.faq-item.open .faq-answer{max-height:300px;padding-top:16px}
+
+/* ── Pricing ── */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px;max-width:800px;margin-left:auto;margin-right:auto}
+.pricing-card{
+  background:var(--card-bg);border:1px solid var(--hair);
+  border-radius:12px;padding:32px 28px;text-align:center;
+  display:flex;flex-direction:column;
+}
+.pricing-card.featured{
+  border-color:var(--violet);
+  background:linear-gradient(135deg,rgba(128,82,255,0.05),transparent);
+  position:relative;
+}
+.pricing-card.featured::before{
+  content:'★ Лучший выбор';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:var(--violet);color:#fff;padding:4px 16px;border-radius:100px;
+  font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.pricing-name{font-size:18px;font-weight:500;color:var(--bone);margin-bottom:8px}
+.pricing-price{font-family:var(--font-display);font-size:clamp(32px,4vw,48px);font-weight:400;color:var(--bone);letter-spacing:-.03em}
+.pricing-star{color:var(--amber)}
+.pricing-desc{color:var(--smoke);font-size:14px;margin:4px 0 16px}
+.pricing-features{list-style:none;text-align:left;flex:1;margin-bottom:24px}
+.pricing-features li{padding:8px 0;font-size:14px;color:var(--ash);border-bottom:1px solid var(--hair);display:flex;gap:8px;align-items:center}
+.pricing-features li::before{content:'✓';color:var(--violet);font-weight:700}
+.pricing-btn{background:transparent;border:1px solid var(--hair);padding:12px 24px;border-radius:100px;font-size:14px;font-weight:600;color:var(--bone);cursor:pointer;transition:.25s}
+.pricing-btn:hover{background:rgba(255,255,255,0.05);border-color:var(--violet)}
+.pricing-card.featured .pricing-btn{background:var(--violet);color:#fff;border-color:var(--violet)}
+.pricing-card.featured .pricing-btn:hover{box-shadow:0 0 30px rgba(128,82,255,0.3)}
+.trial-banner{
+  text-align:center;margin-top:20px;padding:16px;
+  background:rgba(21,132,110,0.1);border:1px solid rgba(21,132,110,0.2);
+  border-radius:100px;font-size:14px;color:var(--lichen);
+}
+
+/* ── CTA Section ── */
+.cta-section{text-align:center;padding:100px 24px}
+.cta-section h2{font-size:clamp(28px,4vw,48px);margin-bottom:16px}
+.cta-section p{color:var(--smoke);margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto}
+.cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* ── Footer ── */
+footer{
+  border-top:1px solid var(--hair);padding:40px 24px;
+  text-align:center;color:var(--smoke);font-size:13px;
+}
+footer a{color:var(--violet)}
+footer .footer-links{display:flex;gap:24px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+
+/* ── Scroll Reveal ── */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .6s,transform .6s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  html{font-size:16px}
+  .hero-inner{grid-template-columns:1fr;gap:32px}
+  .hero{padding-top:80px;min-height:auto}
+  .hero h1{font-size:clamp(26px,9vw,38px);line-height:1}
+  .hero p{font-size:15px}
+  .nav-links{display:none}
+  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:64px;left:0;right:0;
+    background:rgba(0,0,0,0.95);padding:24px;gap:16px;border-bottom:1px solid var(--hair)}
+  .hamburger{display:flex}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .stat-num{font-size:clamp(28px,8vw,42px)}
+  .steps{grid-template-columns:1fr;gap:0}
+  .step-arrow{display:none!important}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px}
+  .grid{grid-template-columns:1fr}
+  section{padding:50px 16px}
+  .section-title{font-size:clamp(22px,6vw,32px)}
+  .section-sub{font-size:15px}
+  .mock-chat-body{min-height:220px}
+  .mock-bubble{font-size:13px}
+  .pricing-card{padding:24px 20px}
+  .hero-btns .btn-primary,.hero-btns .btn-secondary{padding:12px 20px;font-size:14px;width:100%;text-align:center}
+  .savings-banner{padding:24px 16px}
+  .cta-section{padding:60px 16px}
+  .faq-question{font-size:15px}
+  .testimonial-card{padding:24px 16px}
+  .card{padding:24px 16px}
+}
+@media(max-width:480px){
+  html{font-size:15px}
+  .hero h1{font-size:clamp(22px,7vw,30px)}
+  .hero{padding-top:70px}
+  .stats-grid{grid-template-columns:1fr;gap:16px}
+  .stat-num{font-size:clamp(24px,10vw,36px)}
+  .mock-chat-body{min-height:180px;padding:12px 16px}
+  .mock-chat-header{padding:12px 16px}
+  .pricing-grid{max-width:100%}
+  .pricing-price{font-size:clamp(24px,8vw,36px)}
+  section{padding:40px 12px}
+  .grid{gap:16px}
+  .step{padding:16px}
+  .nav-links.open{top:60px;padding:16px}
+}
+
+/* ── Split Text Animation ── */
+.split-char{display:inline-block;opacity:0;transform:translateY(20px) scale(.5);animation:splitIn .6s forwards}
+@keyframes splitIn{to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--violet);border-radius:3px}
+@media(prefers-reduced-motion:reduce){
+  #particle-canvas{display:none!important}
+  .mesh-blob{animation:none!important}
+  .split-char{opacity:1!important;transform:none!important;animation:none!important}
+  .reveal{opacity:1!important;transform:none!important;transition:none!important}
+  .card:hover{transform:none!important}
+  .btn-primary:hover,.btn-secondary:hover,.nav-cta:hover{transform:none!important}
+  *{animation-duration:0s!important;transition-duration:0s!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div id="scroll-bar"></div>
+
+<!-- Gradient Mesh Blobs -->
+<div class="mesh-blob"></div>
+<div class="mesh-blob"></div>
+<div class="mesh-blob"></div>
+
+<!-- Particle Canvas -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">Deal<span>Bot</span>63</div>
+  <div class="nav-links" id="nav-links">
+    <a href="#features">Возможности</a>
+    <a href="#how-it-works">Как работает</a>
+    <a href="#pricing">Тарифы</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://t.me/DealBot63_bot" class="nav-cta">Открыть бота</a>
+  </div>
+  <button class="hamburger" aria-label="Открыть меню" aria-expanded="false" onclick="const l=document.getElementById('nav-links');l.classList.toggle('open');this.setAttribute('aria-expanded',l.classList.contains('open'))">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div>
+      <h1>Следи за <span class="highlight">ценами</span> на Ozon и экономь</h1>
+      <p>DealBot63 — Telegram бот, который отслеживает цены на Ozon 24/7. Мгновенные оповещения, умные триггеры, полный контроль над бюджетом.</p>
+      <div class="hero-btns">
+        <a href="https://t.me/DealBot63_bot" class="btn-primary">🚀 Запустить бота</a>
+        <a href="https://t.me/DealBot63_bot" class="btn-secondary">⭐ Купить подписку</a>
+        <p style="width:100%;font-size:13px;color:var(--smoke);margin-top:2px;letter-spacing:.02em">💳 Оплата внутри бота через Telegram Stars</p>
+      </div>
+    </div>
+    <div class="mock-chat" id="tilt-mockup">
+      <div class="mock-chat-header">
+        <div class="mock-chat-avatar">D</div>
+        <div>
+          <div class="mock-chat-name">DealBot63</div>
+          <div class="mock-chat-status">● online</div>
+        </div>
+      </div>
+      <div class="mock-chat-body">
+        <div class="mock-msg mock-msg-bot">
+          <div class="mock-bubble">👋 Привет! Отправь ссылку на товар с Ozon</div>
+        </div>
+        <div class="mock-msg mock-msg-user">
+          <div class="mock-bubble">https://www.ozon.ru/product/...</div>
+        </div>
+        <div class="mock-msg mock-msg-bot">
+          <div class="mock-bubble">
+            📦 <b>Товар добавлен!</b><br>
+            💰 124 990 ₽ → 🎯 109 990 ₽
+          </div>
+        </div>
+        <div class="mock-msg mock-msg-bot">
+          <div class="mock-bubble alert-bubble">
+            🔔 <b>Цена упала!</b><br>
+            <span class="price-old">124 990 ₽</span><br>
+            <span class="price-new">109 990 ₽ (−12%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Stats -->
+<section>
+  <div class="section-inner reveal">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-num"><span id="stat-users">0</span>+</div>
+        <div class="stat-label">Пользователей</div>
+      </div>
+      <div>
+        <div class="stat-num"><span id="stat-products">0</span>+</div>
+        <div class="stat-label">Товаров отслежено</div>
+      </div>
+      <div>
+        <div class="stat-num"><span id="stat-saved">0</span> ₽</div>
+        <div class="stat-label">Сэкономлено</div>
+      </div>
+    </div>
+
+    <!-- Savings Banner -->
+    <div class="savings-banner">
+      <div class="savings-num" id="savings-counter">0 ₽</div>
+      <div class="savings-label">Столько уже сэкономили пользователи на отслеживании цен</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Features -->
+<section id="features">
+  <div class="section-inner reveal">
+    <div class="section-label">• Возможности</div>
+    <h2 class="section-title">Всё что нужно для умного шопинга</h2>
+    <p class="section-sub">DealBot63 работает 24/7 — просто отправь ссылку и забудь. Бот сам оповестит когда цена упадёт.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Мониторинг 24/7</div>
+        <div class="card-text">Бот проверяет цены каждые 3 часа (Premium — каждые 30 мин). Ничего не пропустишь.</div>
+        <span class="card-tag">В реальном времени</span>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔔</div>
+        <div class="card-title">Мгновенные оповещения</div>
+        <div class="card-text">Как только цена падает до твоей цели — приходит уведомление в Telegram.</div>
+        <span class="card-tag">Push-уведомления</span>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Умные триггеры</div>
+        <div class="card-text">Выбери процент снижения или конкретную сумму. Гибкие настройки под любую стратегию.</div>
+        <span class="card-tag">Кастомные триггеры</span>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Список товаров</div>
+        <div class="card-text">Все отслеживаемые товары в одном месте. Удобное управление и экспорт.</div>
+        <span class="card-tag">Менеджмент</span>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Графики цен</div>
+        <div class="card-text">Визуальная аналитика изменения цен. Принимай решения на основе данных.</div>
+        <span class="card-tag">Аналитика</span>
+      </div>
+      <div class="card">
+        <div class="card-icon">💎</div>
+        <div class="card-title">Premium & VIP</div>
+        <div class="card-text">Больше товаров, чаще проверки, приоритетная поддержка. Выбери свой тариф.</div>
+        <span class="card-tag">Всегда на связи</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- How It Works -->
+<section id="how-it-works">
+  <div class="section-inner reveal">
+    <div class="section-label">• Как работает</div>
+    <h2 class="section-title">Три простых шага</h2>
+    <p class="section-sub">Всё что нужно — открыть бота и отправить ссылку</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-title">Отправь ссылку</div>
+        <div class="step-text">Скопируй ссылку на товар с Ozon и отправь боту</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Настрой триггер</div>
+        <div class="step-text">Выбери процент или сумму снижения цены</div>
+        <div class="step-arrow">→</div>
+      </div>
+      <div class="step">
+        <div class="step-title">Получай оповещения</div>
+        <div class="step-text">Бот следит за ценой и пришлёт уведомление когда упадёт</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Live Chart -->
+<section id="analytics">
+  <div class="section-inner reveal">
+    <div class="section-label">• Аналитика</div>
+    <h2 class="section-title">Динамика цен наглядно</h2>
+    <p class="section-sub">Каждый товар — с историей изменения цены</p>
+    <div class="chart-container">
+      <svg viewBox="0 0 500 200" id="live-chart">
+        <defs>
+          <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8052ff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#8052ff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path id="chart-fill" fill="url(#chart-grad)" d=""/>
+        <path id="chart-line" fill="none" stroke="#8052ff" stroke-width="2" d=""/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Testimonials -->
+<section id="testimonials">
+  <div class="section-inner reveal">
+    <div class="section-label">• Отзывы</div>
+    <h2 class="section-title">Что говорят пользователи</h2>
+    <div class="grid">
+      <div class="testimonial-card">
+        <div class="t-avatar">А</div>
+        <div class="t-text">«Купил iPhone на 8 000 ₽ дешевле благодаря DealBot. Просто отправил ссылку и забыл — через неделю пришло оповещение о скидке»</div>
+        <div class="t-author">Алексей</div>
+        <div class="t-role">Обычный покупатель</div>
+      </div>
+      <div class="testimonial-card">
+        <div class="t-avatar">М</div>
+        <div class="t-text">«Отслеживаю 15 товаров одновременно. Когда цена падает — сразу вижу. Удобнее чем мониторить вручную каждое утро»</div>
+        <div class="t-author">Максим</div>
+        <div class="t-role">Перепродавец</div>
+      </div>
+      <div class="testimonial-card">
+        <div class="t-avatar">Е</div>
+        <div class="t-text">«Подарила бота мужу — теперь сам следит за инструментами. Говорит лучший подарок за год)) Спасибо!»</div>
+        <div class="t-author">Екатерина</div>
+        <div class="t-role">Мама в декрете</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Pricing -->
+<section id="pricing">
+  <div class="section-inner reveal">
+    <div class="section-label">• Тарифы</div>
+    <h2 class="section-title">Выбери свой план</h2>
+    <p class="section-sub">Начни с бесплатного — 3 товара без ограничений</p>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-name">📦 Бесплатный</div>
+        <div class="pricing-price">0 <span class="pricing-star">⭐</span></div>
+        <div class="pricing-desc">Навсегда бесплатно</div>
+        <ul class="pricing-features">
+          <li>До 3 товаров</li>
+          <li>Проверка раз в 3 часа</li>
+          <li>Уведомления о снижении</li>
+          <li>Базовый список товаров</li>
+        </ul>
+        <a href="https://t.me/DealBot63_bot" class="pricing-btn">Начать бесплатно</a>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-name">👑 VIP</div>
+        <div class="pricing-price">150 <span class="pricing-star">⭐</span></div>
+        <div class="pricing-desc">≈ 299 ₽ · Единоразовый платёж · Навсегда</div>
+        <ul class="pricing-features">
+          <li>До 100 товаров</li>
+          <li>Проверка раз в 10 минут</li>
+          <li>Приоритетная поддержка</li>
+          <li>Ранний доступ к новым функциям</li>
+        </ul>
+        <a href="https://t.me/DealBot63_bot" class="pricing-btn">Купить VIP</a>
+      </div>
+    </div>
+    <div class="trial-banner">🎁 <strong>3 товара бесплатно</strong> — попробуй перед покупкой. Никакой привязки карты.</div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-inner reveal">
+    <div class="section-label">• FAQ</div>
+    <h2 class="section-title">Частые вопросы</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question">Можно попробовать бесплатно? <span class="icon">+</span></div>
+        <div class="faq-answer">Да! Бесплатный тариф — до 3 товаров с проверкой раз в 3 часа. Полноценный функционал без ограничений. Подписка не требуется.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Как оплатить звёздами? <span class="icon">+</span></div>
+        <div class="faq-answer">Оплата через Telegram Stars — внутри бота. Нажми /buy, выбери тариф и оплати звёздами. Мгновенная активация.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Что если цена вырастет? <span class="icon">+</span></div>
+        <div class="faq-answer">Ты сам настраиваешь триггер: процент снижения или конкретную сумму. Бот оповестит только когда цена достигнет твоей цели.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Сколько товаров можно отслеживать? <span class="icon">+</span></div>
+        <div class="faq-answer">Бесплатно — до 3 товаров. VIP — до 100 товаров с проверкой каждые 10 минут.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Как отменить подписку? <span class="icon">+</span></div>
+        <div class="faq-answer">Подписка — единоразовый платёж через Telegram Stars. Ничего не надо отменять — всё остаётся навсегда.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Безопасно ли это? <span class="icon">+</span></div>
+        <div class="faq-answer">Бот использует только публичные данные Ozon. Никаких паролей, личных данных или доступа к аккаунту. Полная анонимность.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="reveal">
+    <h2>Готов начать экономить? 🚀</h2>
+    <p>Открой бота, отправь ссылку на товар — и забудь. DealBot63 сам оповестит когда цена упадёт.</p>
+    <div class="cta-btns">
+      <a href="https://t.me/DealBot63_bot" class="btn-primary">🚀 Открыть бота</a>
+      <a href="https://t.me/DealBot63_bot" class="btn-secondary">⭐ Купить VIP</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-links">
+    <a href="https://t.me/DealBot63_bot">DealBot63</a>
+    <a href="#features">Возможности</a>
+    <a href="#pricing">Тарифы</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div>Сделано с ❤️ для умного шопинга · <a href="https://t.me/DealBot63_bot">@DealBot63_bot</a></div>
+</footer>
+
+<script>
+// ─── Particles ───
+const canvas=document.getElementById('particle-canvas');
+const ctx=canvas.getContext('2d');
+let particles=[], mouse={x:-999,y:-999};
+const colors=['#8052ff','#ffb829','#15846e'];
+
+function resize(){
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=window.innerWidth*dpr;
+  canvas.height=window.innerHeight*dpr;
+  ctx.scale(dpr,dpr);
+}
+resize();
+window.addEventListener('resize',resize);
+
+function createParticles(count=250){
+  particles=[];
+  for(let i=0;i<count;i++){
+    particles.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      vx:(Math.random()-0.5)*0.3,
+      vy:(Math.random()-0.5)*0.3,
+      size:Math.random()*3+1,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      seed:Math.random()*100,
+      opacity:Math.random()*0.3+0.2,
+      shape:Math.floor(Math.random()*3),
+      // Крупные звезды для глубины
+      big:Math.random()<0.05?4+Math.random()*3:0,
+    });
+  }
+}
+createParticles();
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const now=Date.now();
+  
+  // Connections between nearby particles (distance < 130px)
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x;
+      const dy=particles[i].y-particles[j].y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<130){
+        ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);
+        ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(128,82,255,${0.05*(1-dist/130)})`;
+        ctx.lineWidth=0.3;ctx.stroke();
+      }
+    }
+  }
+  
+  // Connections to mouse
+  for(let p of particles){
+    const dx=mouse.x-p.x, dy=mouse.y-p.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<150){
+      ctx.beginPath();ctx.moveTo(p.x,p.y);
+      ctx.lineTo(mouse.x,mouse.y);
+      ctx.strokeStyle=`rgba(128,82,255,${0.08*(1-dist/150)})`;
+      ctx.lineWidth=0.5;ctx.stroke();
+    }
+  }
+  
+  // Draw particles with twinkle
+  for(let p of particles){
+    const twinkle=0.3+0.7*Math.sin(now*0.003+p.seed);
+    const size=p.big||p.size;
+    
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=twinkle*p.opacity;
+    
+    if(size>4){ // Large star with glow
+      ctx.shadowColor=p.color;
+      ctx.shadowBlur=8;
+    }
+    
+    if(p.shape===0){
+      ctx.beginPath();ctx.arc(0,0,size,0,Math.PI*2);ctx.fill();
+    }else if(p.shape===1){
+      ctx.beginPath();
+      ctx.moveTo(0,-size*1.5);
+      ctx.lineTo(size*1.3,size*0.8);
+      ctx.lineTo(-size*1.3,size*0.8);
+      ctx.closePath();ctx.fill();
+    }else{
+      ctx.beginPath();
+      ctx.moveTo(0,-size*1.5);
+      ctx.lineTo(size*1.5,0);
+      ctx.lineTo(0,size*1.5);
+      ctx.lineTo(-size*1.5,0);
+      ctx.closePath();ctx.fill();
+    }
+    ctx.restore();
+    
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>canvas.width)p.vx*=-1;
+    if(p.y<0||p.y>canvas.height)p.vy*=-1;
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+// Mouse tracking
+document.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+document.addEventListener('mouseleave',()=>{mouse={x:-999,y:-999}});
+
+// ─── 3D Tilt on Chat Mockup ───
+const tilt=document.getElementById('tilt-mockup');
+if(tilt){
+  tilt.addEventListener('mousemove',e=>{
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect=tilt.getBoundingClientRect();
+    const x=(e.clientX-rect.left)/rect.width-0.5;
+    const y=(e.clientY-rect.top)/rect.height-0.5;
+    tilt.style.transform=`rotateY(${x*10}deg) rotateX(${-y*10}deg)`;
+  });
+  tilt.addEventListener('mouseleave',()=>{tilt.style.transform='rotateY(0) rotateX(0)'});
+}
+
+// ─── FAQ Accordion ───
+document.querySelectorAll('.faq-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.faq-item.open').forEach(other=>{
+      if(other!==item)other.classList.remove('open');
+    });
+    item.classList.toggle('open');
+  });
+});
+
+// ─── Scroll Progress ───
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('scroll-bar').style.width=`${(window.scrollY/h)*100}%`;
+});
+
+// ─── Scroll Reveal ───
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}
+  });
+},{threshold:0.15});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// ─── Split Text Hero ───
+const heroH1=document.querySelector('.hero h1');
+if(heroH1){
+  const text=heroH1.textContent;
+  heroH1.textContent='';
+  text.split('').forEach((char,i)=>{
+    const span=document.createElement('span');
+    span.className='split-char';
+    span.textContent=char===' '?'\u00A0':char;
+    span.style.animationDelay=`${i*0.025}s`;
+    heroH1.appendChild(span);
+  });
+}
+
+// ─── Counter Animation ───
+function animateCounter(id,target,duration=2000,suffix=''){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const start=performance.now();
+  function update(now){
+    const progress=Math.min((now-start)/duration,1);
+    const eased=1-Math.pow(1-progress,3);
+    el.textContent=Math.floor(eased*target).toLocaleString()+suffix;
+    if(progress<1)requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ─── Live Chart ───
+function generateChartData(points=20){
+  let val=50000+Math.random()*30000;
+  const data=[];
+  for(let i=0;i<points;i++){
+    val+=((Math.random()-0.5)*5000);
+    val=Math.max(10000,Math.min(100000,val));
+    data.push(val);
+  }
+  return data;
+}
+
+function drawChart(data){
+  const w=500,h=200,padding={top:20,bottom:30,left:20,right:20};
+  const chartW=w-padding.left-padding.right;
+  const chartH=h-padding.top-padding.bottom;
+  const min=Math.min(...data)*0.95;
+  const max=Math.max(...data)*1.05;
+  
+  const points=data.map((val,i)=>({
+    x:padding.left+(i/(data.length-1))*chartW,
+    y:padding.top+chartH-((val-min)/(max-min))*chartH
+  }));
+  
+  let lineD=`M${points[0].x},${points[0].y}`;
+  for(let i=1;i<points.length;i++){
+    lineD+=`L${points[i].x},${points[i].y}`;
+  }
+  
+  let fillD=lineD+`L${points[points.length-1].x},${padding.top+chartH}L${points[0].x},${padding.top+chartH}Z`;
+  
+  document.getElementById('chart-line').setAttribute('d',lineD);
+  document.getElementById('chart-fill').setAttribute('d',fillD);
+}
+
+let chartData=generateChartData();
+drawChart(chartData);
+
+setInterval(()=>{
+  chartData=generateChartData();
+  drawChart(chartData);
+},3000);
+
+// ─── Savings Counter ───
+const savingsObs=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      animateCounter('stat-users',1260,2000);
+      animateCounter('stat-products',4850,2500);
+      animateCounter('stat-saved',892400,3000,' ₽');
+      
+      // Animate savings counter
+      const savingsEl=document.getElementById('savings-counter');
+      if(savingsEl){
+        const start=performance.now();
+        const target=892400;
+        function update(now){
+          const progress=Math.min((now-start)/3000,1);
+          const eased=1-Math.pow(1-progress,3);
+          savingsEl.textContent=Math.floor(eased*target).toLocaleString()+' ₽';
+          if(progress<1)requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+      }
+      savingsObs.unobserve(entry.target);
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('.stats-grid,.savings-banner').forEach(el=>savingsObs.observe(el));
+
+// ─── Magnetic Buttons ───
+document.querySelectorAll('.btn-primary,.btn-secondary').forEach(btn=>{
+  btn.addEventListener('mousemove',e=>{
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect=btn.getBoundingClientRect();
+    const dx=e.clientX-rect.left-rect.width/2;
+    const dy=e.clientY-rect.top-rect.height/2;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const maxDist=120;
+    if(dist<maxDist){
+      const pull=12*(1-dist/maxDist);
+      const angle=Math.atan2(dy,dx);
+      btn.style.transform=`translate(${Math.cos(angle)*pull}px,${Math.sin(angle)*pull}px)`;
+    }
+  });
+  btn.addEventListener('mouseleave',()=>{btn.style.transform=''});
+});
+
+// ─── Smooth Anchor Scroll ───
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const target=document.querySelector(a.getAttribute('href'));
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+    // Close mobile nav
+    document.getElementById('nav-links').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

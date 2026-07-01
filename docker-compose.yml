@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  bot:
+    build: .
+    container_name: ozon-price-bot
+    restart: always
+    environment:
+      - PYTHONPATH=
+      - TZ=Europe/Moscow
+    volumes:
+      - D:/bot_ozon/prices.db:/bot/prices.db
+      - D:/bot_ozon/bot_full.log:/bot/bot_full.log
+      - D:/bot_ozon/.env:/bot/.env
+      - D:/bot_ozon/config.py:/bot/config.py
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ozon-api-server
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - D:/bot_ozon/prices.db:/bot/prices.db
+      - D:/bot_ozon/admin_panel.html:/bot/admin_panel.html
+      - D:/bot_ozon/dashboard.html:/bot/dashboard.html

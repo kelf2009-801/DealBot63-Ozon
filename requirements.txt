@@ -1,0 +1,10 @@
+aiogram==3.29.0
+aiohttp==3.14.1
+httpx==0.28.1
+requests==2.34.2
+playwright==1.60.0
+cloakbrowser==0.4.4
+python-dotenv==1.2.2
+pydantic==2.13.4
+cryptography==49.0.0
+certifi==2026.6.17
