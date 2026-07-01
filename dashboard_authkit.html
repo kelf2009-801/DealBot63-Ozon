@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>AuthKit · DealBot63</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#05060f;color:#c7d3ea;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;padding:16px}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:linear-gradient(rgba(186,215,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(186,215,247,0.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0}
+.header{position:relative;z-index:1;max-width:900px;margin:0 auto 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px}
+.header h1{font-size:21px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;color:#d8ecf8}
+.header h1 span{color:#663af3;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(102,58,243,0.3);padding:2px 10px;border-radius:2px}
+.header .time{color:rgba(255,255,255,0.2);font-size:11px;font-family:'SF Mono',monospace}
+.grid{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.card{background:#2f343e;border:1px solid #3f4959;border-radius:8px;padding:14px;position:relative;box-shadow:rgba(186,215,247,0.06) 0 0 0 1px inset}
+.card .ic{font-size:16px;margin-bottom:5px}
+.card .lb{font-size:9px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.card .vl{font-size:22px;font-weight:500;letter-spacing:-.01em;color:#d1e4fa}
+.card .sb{font-size:10px;color:rgba(255,255,255,0.2);margin-top:2px}
+.card .accent{color:#663af3}
+.card .gold{color:#e46d4c}
+.charts{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.chart-card{background:#2f343e;border:1px solid #3f4959;border-radius:8px;padding:14px;box-shadow:rgba(186,215,247,0.06) 0 0 0 1px inset}
+.chart-card h3{font-size:10px;font-weight:500;color:rgba(255,255,255,0.25);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase}
+.chart-card .cw{position:relative;height:170px}
+.chart-card:last-child{grid-column:1/-1}
+.chart-card:last-child .cw{height:130px}
+.table-wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;background:#2f343e;border:1px solid #3f4959;border-radius:8px;overflow:hidden;box-shadow:rgba(186,215,247,0.06) 0 0 0 1px inset}
+.table-wrap h3{font-size:10px;font-weight:500;color:rgba(255,255,255,0.25);padding:12px 14px 0;letter-spacing:.08em;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:480px}
+th{padding:7px 10px;text-align:left;font-weight:500;color:rgba(255,255,255,0.2);font-size:8px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #3f4959}
+td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:rgba(255,255,255,0.5)}
+tr:hover{background:rgba(102,58,243,0.06)}
+a{color:#b6d9fc;text-decoration:none}
+.price-up{color:#269684;font-weight:500}
+.price-down{color:#e46d4c;font-weight:500}
+.badge{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9px;font-weight:500}
+.badge-premium{background:rgba(102,58,243,0.15);color:#b6d9fc}
+.badge-free{background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.3)}
+@media(max-width:640px){
+  body{padding:10px}
+  .header h1{font-size:16px}
+  .grid{grid-template-columns:1fr 1fr;gap:6px}
+  .card{padding:10px;border-radius:6px}
+  .card .vl{font-size:17px}
+  .charts{grid-template-columns:1fr;gap:6px}
+  .chart-card .cw{height:130px}
+  .chart-card:last-child .cw{height:100px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>▣ DealBot63 <span>BLUEPRINT</span></h1>
+  <div class="time" id="lastUpdate">—</div>
+</div>
+<div class="grid" id="cards"></div>
+<div class="charts">
+  <div class="chart-card"><h3>Топ товаров</h3><div class="cw"><canvas id="chTop"></canvas></div></div>
+  <div class="chart-card"><h3>Тарифы</h3><div class="cw"><canvas id="chTar"></canvas></div></div>
+  <div class="chart-card"><h3>История цен</h3><div class="cw"><canvas id="chHist"></canvas></div></div>
+</div>
+<div class="table-wrap">
+  <h3>Последние товары</h3>
+  <div style="overflow-x:auto">
+  <table><thead><tr><th>#</th><th>Название</th><th>Цена</th><th>Цель</th><th>Экономия</th><th>Статус</th></tr></thead>
+  <tbody id="prods"></tbody></table></div>
+</div>
+<script>
+const API=window.location.origin,H='X-API-Key',K='grove-street-2024';
+let charts={};
+function destroy(){Object.values(charts).forEach(c=>{if(c)c.destroy()});charts={}}
+function fmt(p){return Number(p||0).toLocaleString('ru-RU')+' ₽'}
+async function load(){
+  destroy();document.getElementById('lastUpdate').textContent='⟳';
+  try{
+    const[s,d,p]=await Promise.all([
+      fetch(API+'/api/stats',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/dashboard',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/products?limit=20',{headers:{[H]:K}}).then(r=>r.json())
+    ]);
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('ru-RU');
+    let ts=0,sc=0;
+    if(p.products)p.products.forEach(x=>{const sv=(x.last_price||0)-(x.current_price||0);if(sv>0){ts+=sv;sc++}});
+    document.getElementById('cards').innerHTML=
+      `<div class="card"><div class="ic">📦</div><div class="lb">Товары</div><div class="vl">${s.total_products}</div><div class="sb">${sc} подешевело</div></div>`+
+      `<div class="card"><div class="ic">👥</div><div class="lb">Пользователи</div><div class="vl">${s.total_users}</div></div>`+
+      `<div class="card"><div class="ic">💰</div><div class="lb">Экономия</div><div class="vl accent">${fmt(ts)}</div><div class="sb">у ${sc} товаров</div></div>`+
+      `<div class="card"><div class="ic">🔔</div><div class="lb">Уведомления</div><div class="vl gold">${s.notified_products}</div></div>`+
+      `<div class="card"><div class="ic">🏷️</div><div class="lb">Средняя цена</div><div class="vl">${fmt(s.average_price)}</div></div>`+
+      `<div class="card"><div class="ic">🔄</div><div class="lb">Проверки</div><div class="vl">${d.total_checks||0}</div></div>`;
+    if(p.products&&p.products.length){
+      const top=[...p.products].sort((a,b)=>b.current_price-a.current_price).slice(0,7);
+      charts.top=new Chart(document.getElementById('chTop'),{type:'bar',data:{labels:top.map(x=>(x.title||'?').slice(0,16)),datasets:[{label:'₽',data:top.map(x=>x.current_price||0),backgroundColor:['#663af3','rgba(102,58,243,0.7)','rgba(102,58,243,0.5)','rgba(102,58,243,0.35)','rgba(102,58,243,0.25)','rgba(102,58,243,0.15)','rgba(102,58,243,0.1)'],borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.15)'},grid:{color:'rgba(255,255,255,0.03)'}},x:{ticks:{color:'rgba(255,255,255,0.2)',font:{size:8}}}}}});
+    }
+    if(s.tariff_stats&&s.tariff_stats.length){
+      charts.tar=new Chart(document.getElementById('chTar'),{type:'doughnut',data:{labels:s.tariff_stats.map(t=>({free:'Free',premium:'Premium',vip:'VIP'}[t.tariff]||t.tariff)),datasets:[{data:s.tariff_stats.map(t=>t.user_count),backgroundColor:['rgba(255,255,255,0.08)','#663af3','#269684'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(255,255,255,0.3)',font:{size:10}}}}}});
+    }
+    if(s.all_price_history&&s.all_price_history.length){
+      const h=s.all_price_history.reverse();
+      charts.hist=new Chart(document.getElementById('chHist'),{type:'line',data:{labels:h.map(x=>x.timestamp?new Date(x.timestamp).toLocaleDateString('ru-RU'):''),datasets:[{label:'Цена',data:h.map(x=>x.price||0),borderColor:'#663af3',backgroundColor:'rgba(102,58,243,0.05)',fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.15)'},grid:{color:'rgba(255,255,255,0.03)'}},x:{ticks:{color:'rgba(255,255,255,0.15)',font:{size:8}}}}}});
+    }
+    const tb=document.getElementById('prods');tb.innerHTML='';
+    if(p.products)p.products.slice(0,15).forEach(x=>{
+      const sv=(x.last_price||0)-(x.current_price||0);
+      const st=sv>0?'<span class="badge badge-premium">🔥 Подешевел</span>':'⏳';
+      tb.innerHTML+=`<tr><td>#${x.id}</td><td><a href="${x.url||'#'}" target="_blank">${(x.title||'?').slice(0,30)}</a></td><td class="price-up">${fmt(x.current_price)}</td><td>${fmt(x.target_price)}</td><td>${sv>0?'<span class="price-up">−'+fmt(sv)+'</span>':'—'}</td><td>${st}</td></tr>`;
+    });
+  }catch(e){document.getElementById('lastUpdate').textContent='✕ '+e.message}
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

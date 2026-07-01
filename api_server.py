@@ -410,11 +410,30 @@ def index():
 
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
-    """Раздаёт HTML-дашборд."""
+    """Раздаёт HTML-дашборд (Emerald)."""
     dashboard_html = Path(__file__).parent / "dashboard.html"
     if dashboard_html.exists():
         return dashboard_html.read_text(encoding="utf-8")
     return "<h1>dashboard.html not found</h1>", 404
+
+# ─── Стили дашбордов ────────────────────────────────────────────
+
+DASHBOARD_STYLES = {
+    "aura": "dashboard_aura.html",
+    "dala": "dashboard_dala.html",
+    "authkit": "dashboard_authkit.html",
+}
+
+@app.route("/dashboard/<style>", methods=["GET"])
+def dashboard_style(style):
+    """Раздаёт дашборд в выбранном стиле: aura, dala, authkit"""
+    filename = DASHBOARD_STYLES.get(style)
+    if not filename:
+        return "<h1>Неизвестный стиль</h1><p>Доступны: aura, dala, authkit, emerald</p>", 404
+    html_path = Path(__file__).parent / filename
+    if html_path.exists():
+        return html_path.read_text(encoding="utf-8")
+    return f"<h1>{filename} not found</h1>", 404
 
 # ─── Админ-панель (HTML) ────────────────────────────────────────
 

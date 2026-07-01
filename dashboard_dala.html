@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Dala · DealBot63</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;padding:16px}
+#cosmos{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.header{position:relative;z-index:1;max-width:900px;margin:0 auto 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px}
+.header h1{font-size:20px;font-weight:400;letter-spacing:.02em;display:flex;align-items:center;gap:10px;color:#fff}
+.header h1 span{color:#8052ff;font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(128,82,255,0.3);padding:2px 10px;border-radius:999px}
+.header .time{color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:.02em}
+.grid{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.card{background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px;position:relative}
+.card .ic{font-size:16px;margin-bottom:5px}
+.card .lb{font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px}
+.card .vl{font-size:22px;font-weight:400;letter-spacing:-.02em;color:rgba(255,255,255,0.9)}
+.card .sb{font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px;letter-spacing:.02em}
+.card .accent{color:#8052ff}
+.card .gold{color:#ffb829}
+.charts{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.chart-card{border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px}
+.chart-card h3{font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase}
+.chart-card .cw{position:relative;height:170px}
+.chart-card:last-child{grid-column:1/-1}
+.chart-card:last-child .cw{height:130px}
+.table-wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;overflow:hidden}
+.table-wrap h3{font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);padding:12px 14px 0;letter-spacing:.08em;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:480px}
+th{padding:7px 10px;text-align:left;font-weight:400;color:rgba(255,255,255,0.2);font-size:9px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid rgba(255,255,255,0.06)}
+td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:rgba(255,255,255,0.6)}
+tr:hover{background:rgba(128,82,255,0.04)}
+a{color:#8052ff;text-decoration:none}
+.price-up{color:#15846e;font-weight:500}
+.price-down{color:#ffb829;font-weight:500}
+.badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:9px;border:1px solid}
+.badge-premium{border-color:rgba(128,82,255,0.3);color:#8052ff}
+.badge-free{border-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3)}
+@media(max-width:640px){
+  body{padding:10px}
+  .header h1{font-size:16px}
+  .grid{grid-template-columns:1fr 1fr;gap:6px}
+  .card{padding:10px;border-radius:6px}
+  .card .vl{font-size:17px}
+  .charts{grid-template-columns:1fr;gap:6px}
+  .chart-card .cw{height:130px}
+  .chart-card:last-child .cw{height:100px}
+}
+</style>
+</head>
+<body>
+<canvas id="cosmos"></canvas>
+<div class="header">
+  <h1>✦ DealBot63 <span>DALA</span></h1>
+  <div class="time" id="lastUpdate">—</div>
+</div>
+<div class="grid" id="cards"></div>
+<div class="charts">
+  <div class="chart-card"><h3>Топ товаров</h3><div class="cw"><canvas id="chTop"></canvas></div></div>
+  <div class="chart-card"><h3>Тарифы</h3><div class="cw"><canvas id="chTar"></canvas></div></div>
+  <div class="chart-card"><h3>История цен</h3><div class="cw"><canvas id="chHist"></canvas></div></div>
+</div>
+<div class="table-wrap">
+  <h3>Последние товары</h3>
+  <div style="overflow-x:auto">
+  <table><thead><tr><th>#</th><th>Название</th><th>Цена</th><th>Цель</th><th>Экономия</th><th>Статус</th></tr></thead>
+  <tbody id="prods"></tbody></table></div>
+</div>
+<script>
+// ── Particle Cosmos ──
+const cv=document.getElementById('cosmos'),ctx=cv.getContext('2d');
+let W,H,pts=[];
+function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}
+window.addEventListener('resize',resize);resize();
+const COLORS=['#8052ff','#ffb829','#15846e'];
+for(let i=0;i<120;i++){pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+1,color:COLORS[Math.floor(Math.random()*COLORS.length)],type:Math.random()>.5?'circle':'diamond'})}
+let mx=0,my=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    ctx.beginPath();
+    const d=Math.hypot(mx-p.x,my-p.y);
+    const alpha=Math.min(1,Math.max(.1,.8-d/300));
+    ctx.fillStyle=p.color;ctx.globalAlpha=alpha;
+    if(p.type==='circle'){ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}
+    else{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);ctx.fillRect(-p.size,-p.size,p.size*2,p.size*2);ctx.restore()}
+    ctx.globalAlpha=1;
+  });
+  // connections
+  for(let i=0;i<pts.length;i++){
+    for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,dist=Math.hypot(dx,dy);
+      if(dist<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(128,82,255,${.08*(1-dist/120)})`;ctx.lineWidth=.5;ctx.stroke()}
+    }
+  }
+  requestAnimationFrame(draw)
+}
+draw();
+
+// ── Dashboard ──
+const API=window.location.origin,H='X-API-Key',K='grove-street-2024';
+let charts={};
+function destroy(){Object.values(charts).forEach(c=>{if(c)c.destroy()});charts={}}
+function fmt(p){return Number(p||0).toLocaleString('ru-RU')+' ₽'}
+async function load(){
+  destroy();document.getElementById('lastUpdate').textContent='⋯';
+  try{
+    const[s,d,p]=await Promise.all([
+      fetch(API+'/api/stats',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/dashboard',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/products?limit=20',{headers:{[H]:K}}).then(r=>r.json())
+    ]);
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('ru-RU');
+    let ts=0,sc=0;
+    if(p.products)p.products.forEach(x=>{const sv=(x.last_price||0)-(x.current_price||0);if(sv>0){ts+=sv;sc++}});
+    document.getElementById('cards').innerHTML=
+      `<div class="card"><div class="ic">📦</div><div class="lb">Товары</div><div class="vl">${s.total_products}</div><div class="sb">${sc} подешевело</div></div>`+
+      `<div class="card"><div class="ic">👥</div><div class="lb">Пользователи</div><div class="vl">${s.total_users}</div></div>`+
+      `<div class="card"><div class="ic">💰</div><div class="lb">Экономия</div><div class="vl accent">${fmt(ts)}</div><div class="sb">у ${sc} товаров</div></div>`+
+      `<div class="card"><div class="ic">🔔</div><div class="lb">Уведомления</div><div class="vl gold">${s.notified_products}</div></div>`+
+      `<div class="card"><div class="ic">🏷️</div><div class="lb">Средняя цена</div><div class="vl">${fmt(s.average_price)}</div></div>`+
+      `<div class="card"><div class="ic">🔄</div><div class="lb">Проверки</div><div class="vl">${d.total_checks||0}</div></div>`;
+    if(p.products&&p.products.length){
+      const top=[...p.products].sort((a,b)=>b.current_price-a.current_price).slice(0,7);
+      charts.top=new Chart(document.getElementById('chTop'),{type:'bar',data:{labels:top.map(x=>(x.title||'?').slice(0,16)),datasets:[{label:'₽',data:top.map(x=>x.current_price||0),backgroundColor:['rgba(128,82,255,0.5)','rgba(128,82,255,0.35)','rgba(128,82,255,0.25)','rgba(128,82,255,0.18)','rgba(128,82,255,0.12)','rgba(128,82,255,0.08)','rgba(128,82,255,0.05)'],borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.2)'},grid:{color:'rgba(255,255,255,0.03)'}},x:{ticks:{color:'rgba(255,255,255,0.3)',font:{size:8}}}}}});
+    }
+    if(s.tariff_stats&&s.tariff_stats.length){
+      charts.tar=new Chart(document.getElementById('chTar'),{type:'doughnut',data:{labels:s.tariff_stats.map(t=>({free:'Free',premium:'Premium',vip:'VIP'}[t.tariff]||t.tariff)),datasets:[{data:s.tariff_stats.map(t=>t.user_count),backgroundColor:['rgba(255,255,255,0.1)','#8052ff','#ffb829'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(255,255,255,0.4)',font:{size:10}}}}}});
+    }
+    if(s.all_price_history&&s.all_price_history.length){
+      const h=s.all_price_history.reverse();
+      charts.hist=new Chart(document.getElementById('chHist'),{type:'line',data:{labels:h.map(x=>x.timestamp?new Date(x.timestamp).toLocaleDateString('ru-RU'):''),datasets:[{label:'Цена',data:h.map(x=>x.price||0),borderColor:'#8052ff',backgroundColor:'rgba(128,82,255,0.05)',fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.2)'},grid:{color:'rgba(255,255,255,0.03)'}},x:{ticks:{color:'rgba(255,255,255,0.2)',font:{size:8}}}}}});
+    }
+    const tb=document.getElementById('prods');tb.innerHTML='';
+    if(p.products)p.products.slice(0,15).forEach(x=>{
+      const sv=(x.last_price||0)-(x.current_price||0);
+      const st=sv>0?'<span class="badge badge-premium">🔥 Подешевел</span>':'⏳';
+      tb.innerHTML+=`<tr><td>#${x.id}</td><td><a href="${x.url||'#'}" target="_blank">${(x.title||'?').slice(0,30)}</a></td><td class="price-up">${fmt(x.current_price)}</td><td>${fmt(x.target_price)}</td><td>${sv>0?'<span class="price-up">−'+fmt(sv)+'</span>':'—'}</td><td>${st}</td></tr>`;
+    });
+  }catch(e){document.getElementById('lastUpdate').textContent='✕ '+e.message}
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

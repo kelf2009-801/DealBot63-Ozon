@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Aura · DealBot63</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0F172A;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;padding:16px}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,0.08) 0%,transparent 50%),
+             radial-gradient(ellipse at 80% 20%,rgba(96,165,250,0.05) 0%,transparent 50%);
+  pointer-events:none;z-index:0}
+.header{position:relative;z-index:1;max-width:900px;margin:0 auto 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.header h1{font-size:22px;font-weight:300;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.header h1 span{background:rgba(96,165,250,0.15);color:#60A5FA;font-size:11px;font-weight:500;padding:3px 12px;border-radius:999px;border:1px solid rgba(96,165,250,0.2)}
+.header .time{color:rgba(255,255,255,0.4);font-size:12px;font-family:'SF Mono',monospace}
+.grid{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.glass-card{background:rgba(255,255,255,0.04);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.06);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);position:relative;overflow:hidden}
+.glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,0.3),transparent)}
+.glass-card .ic{font-size:18px;margin-bottom:6px}
+.glass-card .lb{font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.glass-card .vl{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.glass-card .sb{font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px}
+.glass-card .highlight{color:#60A5FA}
+.charts{position:relative;z-index:1;max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.chart-card{background:rgba(255,255,255,0.04);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.06);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);position:relative}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,0.3),transparent)}
+.chart-card h3{font-size:12px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:10px;letter-spacing:.02em}
+.chart-card .cw{position:relative;height:180px}
+.chart-card:last-child{grid-column:1/-1}
+.chart-card:last-child .cw{height:140px}
+.table-wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;background:rgba(255,255,255,0.04);border-radius:12px;
+  border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overflow:hidden}
+.table-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,0.3),transparent)}
+.table-wrap h3{font-size:12px;font-weight:500;color:rgba(255,255,255,0.5);padding:12px 14px 0;letter-spacing:.02em}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+thead{background:rgba(255,255,255,0.03)}
+th{padding:8px 10px;text-align:left;font-weight:500;color:rgba(255,255,255,0.35);font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+td{padding:6px 10px;border-top:1px solid rgba(255,255,255,0.04);color:rgba(255,255,255,0.8)}
+tr:hover{background:rgba(96,165,250,0.06)}
+a{color:#60A5FA;text-decoration:none}
+.price-up{color:#34D399;font-weight:600}
+.price-down{color:#F87171;font-weight:600}
+.badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:500}
+.badge-premium{background:rgba(96,165,250,0.15);color:#60A5FA;border:1px solid rgba(96,165,250,0.2)}
+.badge-free{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5)}
+@media(max-width:640px){
+  body{padding:10px}
+  .header h1{font-size:17px}
+  .header .time{font-size:10px}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .glass-card{padding:10px;border-radius:10px}
+  .glass-card .vl{font-size:18px}
+  .glass-card .lb{font-size:9px}
+  .charts{grid-template-columns:1fr;gap:8px}
+  .chart-card .cw{height:140px}
+  .chart-card:last-child .cw{height:110px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>✦ DealBot63 <span>LIVE</span></h1>
+  <div class="time" id="lastUpdate">—</div>
+</div>
+
+<div class="grid" id="cards"></div>
+
+<div class="charts">
+  <div class="chart-card"><h3>Топ товаров</h3><div class="cw"><canvas id="chTop"></canvas></div></div>
+  <div class="chart-card"><h3>Тарифы</h3><div class="cw"><canvas id="chTar"></canvas></div></div>
+  <div class="chart-card"><h3>История цен</h3><div class="cw"><canvas id="chHist"></canvas></div></div>
+</div>
+
+<div class="table-wrap">
+  <h3>Последние товары</h3>
+  <div style="overflow-x:auto">
+  <table><thead><tr><th>#</th><th>Название</th><th>Цена</th><th>Цель</th><th>Экономия</th><th>Статус</th></tr></thead>
+  <tbody id="prods"></tbody></table></div>
+</div>
+
+<script>
+const API=window.location.origin,H='X-API-Key',K='grove-street-2024';
+let charts={};
+function destroy(){Object.values(charts).forEach(c=>{if(c)c.destroy()});charts={}}
+function fmt(p){return Number(p||0).toLocaleString('ru-RU')+' ₽'}
+function ago(d){if(!d)return'—';const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'только что';if(s<3600)return Math.floor(s/60)+'м';if(s<86400)return Math.floor(s/3600)+'ч';return Math.floor(s/86400)+'д'}
+
+async function load(){
+  destroy();
+  document.getElementById('lastUpdate').textContent='⟳';
+  try{
+    const[s,d,p]=await Promise.all([
+      fetch(API+'/api/stats',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/dashboard',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/products?limit=20',{headers:{[H]:K}}).then(r=>r.json())
+    ]);
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('ru-RU');
+
+    let totSav=0,savCnt=0;
+    if(p.products)p.products.forEach(x=>{const sv=(x.last_price||0)-(x.current_price||0);if(sv>0){totSav+=sv;savCnt++}});
+
+    document.getElementById('cards').innerHTML=
+      `<div class="glass-card"><div class="ic">📦</div><div class="lb">Товары</div><div class="vl">${s.total_products}</div><div class="sb">${savCnt} подешевело</div></div>`+
+      `<div class="glass-card"><div class="ic">👥</div><div class="lb">Пользователи</div><div class="vl">${s.total_users}</div><div class="sb">активных</div></div>`+
+      `<div class="glass-card"><div class="ic">💰</div><div class="lb">Экономия</div><div class="vl highlight">${fmt(totSav)}</div><div class="sb">у ${savCnt} товаров</div></div>`+
+      `<div class="glass-card"><div class="ic">🔔</div><div class="lb">Уведомления</div><div class="vl">${s.notified_products}</div><div class="sb">сработало</div></div>`+
+      `<div class="glass-card"><div class="ic">🏷️</div><div class="lb">Средняя цена</div><div class="vl">${fmt(s.average_price)}</div></div>`+
+      `<div class="glass-card"><div class="ic">🔄</div><div class="lb">Проверки</div><div class="vl">${d.total_checks||0}</div></div>`;
+
+    // Топ товаров
+    if(p.products&&p.products.length){
+      const top=[...p.products].sort((a,b)=>b.current_price-a.current_price).slice(0,7);
+      charts.top=new Chart(document.getElementById('chTop'),{type:'bar',data:{
+        labels:top.map(x=>(x.title||'?').slice(0,18)),
+        datasets:[{label:'₽',data:top.map(x=>x.current_price||0),backgroundColor:['rgba(96,165,250,0.6)','rgba(59,130,246,0.5)','rgba(147,197,253,0.4)','rgba(96,165,250,0.3)','rgba(59,130,246,0.3)','rgba(147,197,253,0.2)','rgba(96,165,250,0.2)'],borderRadius:4}]
+      },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.3)'},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'rgba(255,255,255,0.4)',font:{size:9}}}}}});
+    }
+
+    // Тарифы
+    if(s.tariff_stats&&s.tariff_stats.length){
+      charts.tar=new Chart(document.getElementById('chTar'),{type:'doughnut',data:{
+        labels:s.tariff_stats.map(t=>({free:'Free',premium:'Premium',vip:'VIP'}[t.tariff]||t.tariff)),
+        datasets:[{data:s.tariff_stats.map(t=>t.user_count),backgroundColor:['rgba(255,255,255,0.15)','rgba(96,165,250,0.6)','rgba(52,211,153,0.6)'],borderWidth:0}]
+      },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(255,255,255,0.5)',font:{size:10}}}}});
+    }
+
+    // История
+    if(s.all_price_history&&s.all_price_history.length){
+      const h=s.all_price_history.reverse();
+      charts.hist=new Chart(document.getElementById('chHist'),{type:'line',data:{
+        labels:h.map(x=>x.timestamp?new Date(x.timestamp).toLocaleDateString('ru-RU'):''),
+        datasets:[{label:'Цена',data:h.map(x=>x.price||0),borderColor:'#60A5FA',backgroundColor:'rgba(96,165,250,0.08)',fill:true,tension:.3,pointRadius:2}]
+      },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:'rgba(255,255,255,0.3)'},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'rgba(255,255,255,0.3)',font:{size:8}}}}}});
+    }
+
+    // Таблица
+    const tb=document.getElementById('prods');tb.innerHTML='';
+    if(p.products)p.products.slice(0,15).forEach(x=>{
+      const sv=(x.last_price||0)-(x.current_price||0);
+      const st=sv>0?'<span class="badge badge-premium">🔥 Подешевел</span>':'⏳';
+      tb.innerHTML+=`<tr><td>#${x.id}</td><td><a href="${x.url||'#'}" target="_blank">${(x.title||'?').slice(0,30)}</a></td><td class="price-up">${fmt(x.current_price)}</td><td>${fmt(x.target_price)}</td><td>${sv>0?'<span class="price-up">−'+fmt(sv)+'</span>':'—'}</td><td>${st}</td></tr>`;
+    });
+  }catch(e){document.getElementById('lastUpdate').textContent='✕ '+e.message}
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

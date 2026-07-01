@@ -5,10 +5,10 @@ WORKDIR /bot
 # Ставим Flask
 RUN pip install --no-cache-dir flask
 
-# Копируем API, админку и дашборд
+# Копируем API, админку и дашборды
 COPY api_server.py .
 COPY admin_panel.html .
-COPY dashboard.html .
+COPY dashboard*.html .
 
 ENV PYTHONUNBUFFERED=1
 

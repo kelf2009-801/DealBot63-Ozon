@@ -28,3 +28,6 @@ services:
       - D:/bot_ozon/prices.db:/bot/prices.db
       - D:/bot_ozon/admin_panel.html:/bot/admin_panel.html
       - D:/bot_ozon/dashboard.html:/bot/dashboard.html
+      - D:/bot_ozon/dashboard_aura.html:/bot/dashboard_aura.html
+      - D:/bot_ozon/dashboard_dala.html:/bot/dashboard_dala.html
+      - D:/bot_ozon/dashboard_authkit.html:/bot/dashboard_authkit.html
