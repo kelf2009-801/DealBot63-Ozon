@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>DealBot63 · Дашборд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style id="main-style">
+/* EMERALD — по умолчанию */
+:root{--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text2:#475569;--text3:#94a3b8;--border:#e2e8f0;--green:#05974f;--green-l:#e8f8ef;--gold:#f5b342;--radius:16px;--shadow:0 1px 3px rgba(0,0,0,0.06);--card-pad:20px;--val-size:32px;--h1-size:28px;--body-pad:24px;--grid-gap:16px;--chart-h:260px;--chart-h2:200px;--font-size:13px;--th-size:11px;--td-size:13px;--badge-s:11px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:var(--body-pad);line-height:1.6}
+.header{max-width:900px;margin:0 auto 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:var(--h1-size);font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.header h1 span{background:var(--green);color:#fff;font-size:14px;font-weight:600;padding:4px 12px;border-radius:20px}
+.header .time{color:var(--text3);font-size:14px}
+.picker{max-width:900px;margin:0 auto 16px;display:flex;gap:6px;flex-wrap:wrap}
+.picker button{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.picker button.active{background:var(--green);color:#fff;border-color:var(--green)}
+.picker button:hover{transform:translateY(-1px)}
+.grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--grid-gap);margin-bottom:var(--grid-gap)}
+.card{background:var(--surface);border-radius:var(--radius);padding:var(--card-pad);box-shadow:var(--shadow);border:1px solid var(--border)}
+.card .lb{font-size:13px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.card .vl{font-size:var(--val-size);font-weight:800;color:var(--text);letter-spacing:-.02em}
+.card .sb{font-size:13px;color:var(--text2);margin-top:4px}
+.card .ic{font-size:24px;margin-bottom:8px}
+.green .vl{color:var(--green)}
+.gold .vl{color:var(--gold)}
+.charts{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:var(--grid-gap);margin-bottom:var(--grid-gap)}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:var(--card-pad);box-shadow:var(--shadow);border:1px solid var(--border)}
+.chart-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text2)}
+.chart-card .cw{position:relative;height:var(--chart-h)}
+.chart-card:last-child{grid-column:1/-1}
+.chart-card:last-child .cw{height:var(--chart-h2)}
+.table-wrap{max-width:900px;margin:0 auto;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow-x:auto}
+.table-wrap h3{font-size:15px;font-weight:600;padding:16px 20px 0;color:var(--text2)}
+table{width:100%;border-collapse:collapse;font-size:var(--font-size);min-width:480px}
+thead{background:var(--green-l)}
+th{padding:12px 16px;text-align:left;font-weight:600;color:var(--text2);font-size:var(--th-size);text-transform:uppercase;letter-spacing:.05em}
+td{padding:10px 16px;border-top:1px solid var(--border);color:var(--text)}
+tr:hover{background:var(--green-l)}
+a{color:var(--green);text-decoration:none}
+.price-up{color:var(--green);font-weight:600}
+.price-down{color:#ef4444;font-weight:600}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:var(--badge-s);font-weight:600}
+.badge-premium{background:var(--gold-l);color:#b8860b}
+.badge-free{background:#e2e8f0;color:#475569}
+/* AURA GLASS */
+.theme-aura{--bg:#0F172A;--surface:rgba(255,255,255,0.04);--text:#fff;--text2:rgba(255,255,255,0.5);--text3:rgba(255,255,255,0.35);--border:rgba(255,255,255,0.06);--green:#60A5FA;--green-l:rgba(96,165,250,0.08);--gold:#60A5FA;--radius:12px;--shadow:none;--card-pad:14px;--val-size:22px;--h1-size:20px;--body-pad:16px;--grid-gap:10px;--chart-h:180px;--chart-h2:140px;--font-size:12px;--th-size:9px;--td-size:11px;--badge-s:10px}
+.theme-aura .card,.theme-aura .chart-card,.theme-aura .table-wrap{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.06);position:relative;}
+.theme-aura .card::before,.theme-aura .chart-card::before,.theme-aura .table-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(96,165,250,0.3),transparent)}
+.theme-aura thead{background:rgba(255,255,255,0.03)}
+.theme-aura tr:hover{background:rgba(96,165,250,0.06)}
+/* DALA COSMIC */
+.theme-dala{--bg:#000;--surface:transparent;--text:#fff;--text2:rgba(255,255,255,0.3);--text3:rgba(255,255,255,0.2);--border:rgba(255,255,255,0.08);--green:#8052ff;--green-l:rgba(128,82,255,0.06);--gold:#ffb829;--radius:8px;--shadow:none;--card-pad:14px;--val-size:20px;--h1-size:18px;--body-pad:16px;--grid-gap:8px;--chart-h:170px;--chart-h2:130px;--font-size:11px;--th-size:9px;--td-size:11px;--badge-s:9px}
+.theme-dala .card,.theme-dala .chart-card,.theme-dala .table-wrap{border:1px solid rgba(255,255,255,0.08)}
+.theme-dala thead{border-bottom:1px solid rgba(255,255,255,0.06)}
+.theme-dala tr:hover{background:rgba(128,82,255,0.04)}
+/* AUTHKIT BLUEPRINT */
+.theme-authkit{--bg:#05060f;--surface:#2f343e;--text:#c7d3ea;--text2:rgba(255,255,255,0.25);--text3:rgba(255,255,255,0.2);--border:#3f4959;--green:#663af3;--green-l:rgba(102,58,243,0.08);--gold:#e46d4c;--radius:8px;--shadow:rgba(186,215,247,0.06) 0 0 0 1px inset;--card-pad:14px;--val-size:20px;--h1-size:18px;--body-pad:16px;--grid-gap:8px;--chart-h:170px;--chart-h2:130px;--font-size:11px;--th-size:8px;--td-size:11px;--badge-s:9px}
+.theme-authkit .card,.theme-authkit .chart-card,.theme-authkit .table-wrap{box-shadow:rgba(186,215,247,0.06) 0 0 0 1px inset}
+.theme-authkit thead{color:rgba(255,255,255,0.2)}
+.theme-authkit tr:hover{background:rgba(102,58,243,0.06)}
+/* GROVE STREET */
+.theme-grove{--bg:#0a0a0a;--surface:#111;--text:#e0e0e0;--text2:#4CAF50;--text3:rgba(76,175,80,0.4);--border:#1a3a1a;--green:#4CAF50;--green-l:rgba(76,175,80,0.08);--gold:#4CAF50;--radius:4px;--shadow:0 0 10px rgba(76,175,80,0.1);--card-pad:14px;--val-size:22px;--h1-size:20px;--body-pad:16px;--grid-gap:8px;--chart-h:170px;--chart-h2:130px;--font-size:11px;--th-size:9px;--td-size:11px;--badge-s:9px}
+.theme-grove body{font-family:'Courier New',monospace}
+.theme-grove .card,.theme-grove .chart-card,.theme-grove .table-wrap{border:1px solid #1a3a1a;box-shadow:0 0 8px rgba(76,175,80,0.05)}
+.theme-grove thead{background:rgba(76,175,80,0.05)}
+.theme-grove tr:hover{background:rgba(76,175,80,0.05)}
+.theme-grove .badge-premium{border:1px solid #4CAF50;color:#4CAF50;background:transparent}
+.theme-grove .badge-free{border:1px solid #333;color:#666;background:transparent}
+@media(max-width:640px){
+  .grid{grid-template-columns:1fr 1fr}
+  .charts{grid-template-columns:1fr}
+  .header h1{font-size:17px}
+  .card .vl{font-size:18px}
+  :root{--chart-h:180px;--chart-h2:150px;--card-pad:12px;--body-pad:12px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📊 DealBot63 <span id="styleLabel">EMERALD</span></h1>
+  <div class="time" id="lastUpdate">—</div>
+</div>
+<div class="picker" id="picker">
+  <button data-style="emerald" class="active">🌿 Emerald</button>
+  <button data-style="aura">🌌 Aura Glass</button>
+  <button data-style="dala">🪐 Dala Cosmic</button>
+  <button data-style="authkit">🔷 Blueprint</button>
+  <button data-style="grove">💀 Grove St</button>
+</div>
+<div class="grid" id="cards"></div>
+<div class="charts">
+  <div class="chart-card"><h3>🏆 Топ товаров</h3><div class="cw"><canvas id="chTop"></canvas></div></div>
+  <div class="chart-card"><h3>👥 Тарифы</h3><div class="cw"><canvas id="chTar"></canvas></div></div>
+  <div class="chart-card"><h3>📈 История цен</h3><div class="cw"><canvas id="chHist"></canvas></div></div>
+</div>
+<div class="table-wrap">
+  <h3>📋 Последние товары</h3>
+  <table><thead><tr><th>#</th><th>Название</th><th>Цена</th><th>Цель</th><th>Экономия</th><th>Статус</th></tr></thead>
+  <tbody id="prods"></tbody></table>
+</div>
+<script>
+const API=window.location.origin,H='X-API-Key',K='grove-street-2024';
+let charts={},currentStyle='emerald';
+const STYLES={emerald:'🌿 Emerald',aura:'🌌 Aura Glass',dala:'🪐 Dala Cosmic',authkit:'🔷 Blueprint',grove:'💀 Grove St'};
+function destroy(){Object.values(charts).forEach(c=>{if(c)c.destroy()});charts={}}
+function fmt(p){return Number(p||0).toLocaleString('ru-RU')+' ₽'}
+function ago(d){if(!d)return'—';const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'только что';if(s<3600)return Math.floor(s/60)+'м';if(s<86400)return Math.floor(s/3600)+'ч';return Math.floor(s/86400)+'д'}
+
+function switchStyle(s){
+  currentStyle=s;
+  document.body.className='theme-'+s;
+  document.getElementById('styleLabel').textContent=STYLES[s];
+  document.querySelectorAll('.picker button').forEach(b=>{b.classList.toggle('active',b.dataset.style===s)});
+  // Перерисовываем графики с новыми цветами
+  if(charts.top)charts.top.destroy();
+  if(charts.tar)charts.tar.destroy();
+  if(charts.hist)charts.hist.destroy();
+  charts={};
+  drawCharts();
+}
+
+document.getElementById('picker').addEventListener('click',e=>{
+  if(e.target.dataset.style)switchStyle(e.target.dataset.style);
+});
+
+function getColors(){
+  const s=currentStyle;
+  if(s==='aura')return{primary:'#60A5FA',bg:'rgba(96,165,250,0.08)',bar:['rgba(96,165,250,0.6)','rgba(59,130,246,0.5)','rgba(147,197,253,0.4)','rgba(96,165,250,0.3)','rgba(59,130,246,0.3)','rgba(147,197,253,0.2)','rgba(96,165,250,0.2)'],donut:['rgba(255,255,255,0.15)','rgba(96,165,250,0.6)','rgba(52,211,153,0.6)'],grid:'rgba(255,255,255,0.04)',tick:'rgba(255,255,255,0.3)',label:'rgba(255,255,255,0.4)'};
+  if(s==='dala')return{primary:'#8052ff',bg:'rgba(128,82,255,0.05)',bar:['rgba(128,82,255,0.5)','rgba(128,82,255,0.35)','rgba(128,82,255,0.25)','rgba(128,82,255,0.18)','rgba(128,82,255,0.12)','rgba(128,82,255,0.08)','rgba(128,82,255,0.05)'],donut:['rgba(255,255,255,0.1)','#8052ff','#ffb829'],grid:'rgba(255,255,255,0.03)',tick:'rgba(255,255,255,0.2)',label:'rgba(255,255,255,0.3)'};
+  if(s==='authkit')return{primary:'#663af3',bg:'rgba(102,58,243,0.05)',bar:['#663af3','rgba(102,58,243,0.7)','rgba(102,58,243,0.5)','rgba(102,58,243,0.35)','rgba(102,58,243,0.25)','rgba(102,58,243,0.15)','rgba(102,58,243,0.1)'],donut:['rgba(255,255,255,0.08)','#663af3','#269684'],grid:'rgba(255,255,255,0.03)',tick:'rgba(255,255,255,0.15)',label:'rgba(255,255,255,0.2)'};
+  if(s==='grove')return{primary:'#4CAF50',bg:'rgba(76,175,80,0.05)',bar:['#4CAF50','rgba(76,175,80,0.6)','rgba(76,175,80,0.4)','rgba(76,175,80,0.3)','rgba(76,175,80,0.2)','rgba(76,175,80,0.15)','rgba(76,175,80,0.1)'],donut:['rgba(255,255,255,0.08)','#4CAF50','#2E7D32'],grid:'rgba(76,175,80,0.05)',tick:'rgba(76,175,80,0.3)',label:'rgba(76,175,80,0.4)'};
+  return{primary:'#05974f',bg:'rgba(5,151,79,0.1)',bar:['#05974f','#f5b342','#3b82f6','#8b5cf6','#ef4444','#06b6d4','#f97316'],donut:['#94a3b8','#f5b342','#05974f'],grid:'rgba(0,0,0,0.06)',tick:'rgba(0,0,0,0.5)',label:'rgba(0,0,0,0.6)'};
+}
+
+let _s,_d,_p;
+async function drawCharts(){
+  const c=getColors();
+  if(_p&&_p.products&&_p.products.length){
+    const top=[..._p.products].sort((a,b)=>b.current_price-a.current_price).slice(0,7);
+    charts.top=new Chart(document.getElementById('chTop'),{type:'bar',data:{labels:top.map(x=>(x.title||'?').slice(0,16)),datasets:[{label:'₽',data:top.map(x=>x.current_price||0),backgroundColor:c.bar,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:c.tick},grid:{color:c.grid}},x:{ticks:{color:c.label,font:{size:9}}}}}});
+  }
+  if(_s&&_s.tariff_stats&&_s.tariff_stats.length){
+    charts.tar=new Chart(document.getElementById('chTar'),{type:'doughnut',data:{labels:_s.tariff_stats.map(t=>({free:'Free',premium:'Premium',vip:'VIP'}[t.tariff]||t.tariff)),datasets:[{data:_s.tariff_stats.map(t=>t.user_count),backgroundColor:c.donut,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.tick,font:{size:10}}}}}});
+  }
+  if(_s&&_s.all_price_history&&_s.all_price_history.length){
+    const h=_s.all_price_history.reverse();
+    charts.hist=new Chart(document.getElementById('chHist'),{type:'line',data:{labels:h.map(x=>x.timestamp?new Date(x.timestamp).toLocaleDateString('ru-RU'):''),datasets:[{label:'Цена',data:h.map(x=>x.price||0),borderColor:c.primary,backgroundColor:c.bg,fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toLocaleString('ru-RU'),color:c.tick},grid:{color:c.grid}},x:{ticks:{color:c.tick,font:{size:8}}}}}});
+  }
+}
+
+async function load(){
+  destroy();document.getElementById('lastUpdate').textContent='⏳';
+  try{
+    [_s,_d,_p]=await Promise.all([
+      fetch(API+'/api/stats',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/dashboard',{headers:{[H]:K}}).then(r=>r.json()),
+      fetch(API+'/api/products?limit=20',{headers:{[H]:K}}).then(r=>r.json())
+    ]);
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleString('ru-RU');
+    let ts=0,sc=0;
+    if(_p.products)_p.products.forEach(x=>{const sv=(x.last_price||0)-(x.current_price||0);if(sv>0){ts+=sv;sc++}});
+    document.getElementById('cards').innerHTML=
+      `<div class="card"><div class="ic">📦</div><div class="lb">Товары</div><div class="vl">${_s.total_products}</div><div class="sb">${sc} подешевело</div></div>`+
+      `<div class="card"><div class="ic">👥</div><div class="lb">Пользователи</div><div class="vl">${_s.total_users}</div></div>`+
+      `<div class="card green"><div class="ic">💰</div><div class="lb">Экономия</div><div class="vl">${fmt(ts)}</div><div class="sb">у ${sc} товаров</div></div>`+
+      `<div class="card gold"><div class="ic">🔔</div><div class="lb">Уведомления</div><div class="vl">${_s.notified_products}</div></div>`+
+      `<div class="card"><div class="ic">🏷️</div><div class="lb">Средняя цена</div><div class="vl">${fmt(_s.average_price)}</div></div>`+
+      `<div class="card green"><div class="ic">🔄</div><div class="lb">Проверки</div><div class="vl">${_d.total_checks||0}</div></div>`;
+    drawCharts();
+    const tb=document.getElementById('prods');tb.innerHTML='';
+    if(_p.products)_p.products.slice(0,15).forEach(x=>{
+      const sv=(x.last_price||0)-(x.current_price||0);
+      const st=sv>0?'<span class="badge badge-premium">🔥 Подешевел</span>':'⏳';
+      tb.innerHTML+=`<tr><td>#${x.id}</td><td><a href="${x.url||'#'}" target="_blank">${(x.title||'?').slice(0,30)}</a></td><td class="price-up">${fmt(x.current_price)}</td><td>${fmt(x.target_price)}</td><td>${sv>0?'<span class="price-up">−'+fmt(sv)+'</span>':'—'}</td><td>${st}</td></tr>`;
+    });
+  }catch(e){document.getElementById('lastUpdate').textContent='✕ '+e.message}
+}
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

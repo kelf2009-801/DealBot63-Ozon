@@ -101,9 +101,15 @@ DB_PATH = "prices.db"
 
 # ─── База данных ───────────────────────────────────────────────
 
+# Глобальный семафор — не более 2 одновременных браузеров
+browser_semaphore = asyncio.Semaphore(2)
+
 def init_db():
     import sqlite3
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA foreign_keys=ON")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS tracked_products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -210,116 +216,112 @@ async def parse_ozon_price(url: str) -> dict:
     
     try:
         from cloakbrowser import launch_async
-        browser = await launch_async(headless=True)
-        page = await browser.new_page()
-        
-        # Навигация — ждём полной загрузки (всех JS, картинок, запросов)
-        await page.goto(url, wait_until="networkidle", timeout=45000)
-        await asyncio.sleep(2)  # Даём JS время отрендерить цену
-        
-        # Ищем цену — несколько способов
-        price = None
-        title = None
-        page_content = None
-        
-        # Способ 1: webPrice (Ozon виджет цены)
-        try:
-            await page.wait_for_selector('[data-widget="webPrice"]', timeout=8000)
-            el = await page.query_selector('[data-widget="webPrice"] span')
-            if el:
-                text = await el.text_content()
-                text = text or ""
-                nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
-                if nums:
-                    price = float(''.join(nums))
-                    logger.info(f"[PARSE] Method 1 (webPrice): {price}")
-        except Exception as e:
-            logger.warning(f"[PARSE] Method 1 failed: {e}")
-        
-        # Способ 2: price-классы на испанском/русском
-        if not price:
+        async with browser_semaphore:
+            browser = await launch_async(headless=True)
+            page = await browser.new_page()
+            
+            # Навигация — ждём полной загрузки
+            await page.goto(url, wait_until="networkidle", timeout=45000)
+            await asyncio.sleep(2)
+            
+            # Ищем цену — несколько способов
+            price = None
+            title = None
+            page_content = None
+            
+            # Способ 1: webPrice
             try:
-                for sel in ['[class*="price"]', '[class*="Price"]', '[class*="cost"]', '[class*="Cost"]']:
-                    try:
-                        el = await page.query_selector(sel)
-                        if el:
-                            text = await el.text_content() or ""
-                            if '₽' in text:
-                                nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
-                                if nums:
-                                    price = float(''.join(nums))
-                                    logger.info(f"[PARSE] Method 2 (class*price): {price}")
-                                    break
-                    except:
-                        continue
+                await page.wait_for_selector('[data-widget="webPrice"]', timeout=8000)
+                el = await page.query_selector('[data-widget="webPrice"] span')
+                if el:
+                    text = await el.text_content() or ""
+                    nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
+                    if nums:
+                        price = float(''.join(nums))
+                        logger.info(f"[PARSE] Method 1 (webPrice): {price}")
             except Exception as e:
-                logger.warning(f"[PARSE] Method 2 failed: {e}")
-        
-        # Способ 3: любой span/div с ₽
-        if not price:
-            try:
-                els = await page.query_selector_all('span, div, b, strong')
-                for el in els:
-                    try:
-                        text = await el.text_content() or ""
-                        if '₽' in text and '→' not in text and 'до' not in text.lower() and 'от' not in text.lower():
-                            nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
-                            if nums:
-                                candidate = float(nums[-1])
-                                # Фильтр: цена должна быть разумной (от 10 до 500000)
-                                if 10 < candidate < 500000:
-                                    price = candidate
-                                    logger.info(f"[PARSE] Method 3 (₽ span): {price}")
-                                    break
-                    except:
-                        continue
-            except Exception as e:
-                logger.warning(f"[PARSE] Method 3 failed: {e}")
-        
-        # Способ 4: берём весь HTML и ищем паттерны цены
-        if not price:
-            try:
-                page_content = await page.content()
-                # Ищем "price": 1234.56 форматы
-                for pattern in [
-                    r'"price"\s*:\s*(\d+\.?\d*)',
-                    r'"priceValue"\s*:\s*(\d+\.?\d*)',
-                    r'"priceAmount"\s*:\s*(\d+\.?\d*)',
-                    r'"AmountWithCurrency"\s*:\s*"[^"]*(\d+[\s\d]*\d+)',
-                    r'₽</span>\s*</span>\s*<span[^>]*>\s*(\d+[\s\d]*\d+)',
-                ]:
-                    match = re.search(pattern, page_content)
-                    if match:
-                        raw = match.group(1).replace(' ', '').replace('\u2009', '')
+                logger.warning(f"[PARSE] Method 1 failed: {e}")
+            
+            # Способ 2: price-классы
+            if not price:
+                try:
+                    for sel in ['[class*="price"]', '[class*="Price"]', '[class*="cost"]', '[class*="Cost"]']:
                         try:
-                            p = float(raw)
-                            if 10 < p < 500000:
-                                price = p
-                                logger.info(f"[PARSE] Method 4 (regex HTML): {price}")
-                                break
+                            el = await page.query_selector(sel)
+                            if el:
+                                text = await el.text_content() or ""
+                                if '₽' in text:
+                                    nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
+                                    if nums:
+                                        price = float(''.join(nums))
+                                        logger.info(f"[PARSE] Method 2 (class*price): {price}")
+                                        break
                         except:
                             continue
-            except Exception as e:
-                logger.warning(f"[PARSE] Method 4 failed: {e}")
-        
-        # Название товара
-        try:
-            title_el = await page.query_selector('[data-widget="webProductHeading"] h1')
-            if not title_el:
-                title_el = await page.query_selector('h1')
-            if title_el:
-                title = await title_el.text_content()
-                title = title.strip() if title else "Товар с Ozon"
-            else:
-                # Из HTML
-                if not title and page_content:
-                    match = re.search(r'<h1[^>]*>([^<]+)', page_content)
-                    if match:
-                        title = match.group(1).strip()
-        except:
-            title = "Товар с Ozon"
-        
-        await browser.close()
+                except Exception as e:
+                    logger.warning(f"[PARSE] Method 2 failed: {e}")
+            
+            # Способ 3: любой span/div с ₽
+            if not price:
+                try:
+                    els = await page.query_selector_all('span, div, b, strong')
+                    for el in els:
+                        try:
+                            text = await el.text_content() or ""
+                            if '₽' in text and '→' not in text and 'до' not in text.lower() and 'от' not in text.lower():
+                                nums = re.findall(r'[\d]+', text.replace(' ', '').replace('\u2009', ''))
+                                if nums:
+                                    candidate = float(nums[-1])
+                                    if 10 < candidate < 500000:
+                                        price = candidate
+                                        logger.info(f"[PARSE] Method 3 (₽ span): {price}")
+                                        break
+                        except:
+                            continue
+                except Exception as e:
+                    logger.warning(f"[PARSE] Method 3 failed: {e}")
+            
+            # Способ 4: HTML regex
+            if not price:
+                try:
+                    page_content = await page.content()
+                    for pattern in [
+                        r'"price"\s*:\s*(\d+\.?\d*)',
+                        r'"priceValue"\s*:\s*(\d+\.?\d*)',
+                        r'"priceAmount"\s*:\s*(\d+\.?\d*)',
+                        r'₽</span>\s*</span>\s*<span[^>]*>\s*(\d+[\s\d]*\d+)',
+                    ]:
+                        match = re.search(pattern, page_content)
+                        if match:
+                            raw = match.group(1).replace(' ', '').replace('\u2009', '')
+                            try:
+                                p = float(raw)
+                                if 10 < p < 500000:
+                                    price = p
+                                    logger.info(f"[PARSE] Method 4 (regex HTML): {price}")
+                                    break
+                            except:
+                                continue
+                except Exception as e:
+                    logger.warning(f"[PARSE] Method 4 failed: {e}")
+            
+            # Название товара
+            try:
+                title_el = await page.query_selector('[data-widget="webProductHeading"] h1')
+                if not title_el:
+                    title_el = await page.query_selector('h1')
+                if title_el:
+                    title = await title_el.text_content()
+                    title = title.strip() if title else "Товар с Ozon"
+                else:
+                    if not title and page_content:
+                        match = re.search(r'<h1[^>]*>([^<]+)', page_content)
+                        if match:
+                            title = match.group(1).strip()
+            except:
+                title = "Товар с Ozon"
+            
+            await browser.close()
         
         if price and price > 0:
             logger.info(f"[PARSE] Success: price={price}, title={title[:40] if title else None}")
@@ -597,11 +599,33 @@ async def pre_checkout_handler(pre_checkout_q: PreCheckoutQuery):
 
 @dp.message(F.successful_payment)
 async def success_payment_handler(message: Message):
-    """Обработка успешного платежа"""
+    """Обработка успешного платежа с валидацией"""
     user_id = message.from_user.id
     payload = message.successful_payment.invoice_payload
-    tariff = payload.split(":")[1] if ":" in payload else "premium"
-    
+    total_amount = message.successful_payment.total_amount
+    currency = message.successful_payment.currency
+
+    # Валидация payload
+    parts = payload.split(":")
+    if len(parts) != 2 or parts[0] != "tariff":
+        logger.warning(f"[PAYMENT] Invalid payload from user {user_id}: {payload}")
+        await message.answer("❌ Некорректный платёж. Обратись в поддержку.")
+        return
+
+    tariff = parts[1]
+    if tariff not in TARIFFS:
+        logger.warning(f"[PAYMENT] Invalid tariff from user {user_id}: {tariff}")
+        await message.answer("❌ Неизвестный тариф.")
+        return
+
+    # Валидация суммы (защита от подделки)
+    expected_amounts = {"premium": 100, "vip": 150}
+    if tariff in expected_amounts and total_amount != expected_amounts[tariff]:
+        logger.warning(f"[PAYMENT] Amount mismatch for user {user_id}: "
+                       f"got {total_amount} {currency}, expected {expected_amounts[tariff]} XTR")
+        await message.answer("❌ Неверная сумма платежа. Обратись в поддержку.")
+        return
+
     import sqlite3
     import time
     conn = sqlite3.connect(DB_PATH)
@@ -610,7 +634,7 @@ async def success_payment_handler(message: Message):
                     VALUES (?, ?, ?)""", (user_id, tariff, expires))
     conn.commit()
     conn.close()
-    
+
     await message.answer(
         f"✅ <b>Оплата прошла!</b>\n\n"
         f"Тариф <b>{TARIFFS[tariff]['name']}</b> активен на 30 дней.\n"
@@ -682,13 +706,37 @@ async def cmd_admin(message: Message):
     
     await message.answer(text, reply_markup=keyboard)
 
+# Защита от перебора пароля админки
+admin_login_attempts: dict[int, list[float]] = defaultdict(list)
+MAX_ADMIN_ATTEMPTS = 5
+ADMIN_ATTEMPT_WINDOW = 300  # 5 минут
+
 # Обработка ввода пароля для доступа к админке
 @dp.message(lambda m: m.from_user.id in admin_pending_password)
 async def handle_admin_password(message: Message):
-    """Проверяет пароль админа"""
+    """Проверяет пароль админа с защитой от перебора"""
     user_id = message.from_user.id
+    now = time.time()
+
+    # Очищаем старые попытки
+    admin_login_attempts[user_id] = [
+        t for t in admin_login_attempts[user_id]
+        if t > now - ADMIN_ATTEMPT_WINDOW
+    ]
+
+    # Блокировка при превышении лимита
+    if len(admin_login_attempts[user_id]) >= MAX_ADMIN_ATTEMPTS:
+        del admin_pending_password[user_id]
+        remaining = int(ADMIN_ATTEMPT_WINDOW - (now - admin_login_attempts[user_id][0]))
+        await message.answer(
+            f"🚫 <b>Слишком много попыток.</b>\n"
+            f"Попробуй снова через {remaining // 60} мин."
+        )
+        return
+
+    admin_login_attempts[user_id].append(now)
     del admin_pending_password[user_id]  # Чистим стейт
-    
+
     if hashlib.sha256((message.text or "").encode()).hexdigest() == hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest():
         admin_temp_access[user_id] = time.time()
         await message.answer("✅ <b>Пароль верный!</b> Добро пожаловать в админ-панель!")
@@ -1399,7 +1447,23 @@ async def main():
     asyncio.create_task(price_checker())
     asyncio.create_task(daily_reminder())
     
+    # Graceful shutdown
+    loop = asyncio.get_event_loop()
+    for sig in (2, 15):  # SIGINT=2, SIGTERM=15
+        try:
+            loop.add_signal_handler(sig, lambda: asyncio.create_task(shutdown()))
+        except NotImplementedError:
+            pass  # Windows не поддерживает add_signal_handler
+    
     await dp.start_polling(bot)
+
+async def shutdown():
+    """Graceful shutdown — закрываем все ресурсы"""
+    logger.info("Shutting down...")
+    await dp.stop_polling()
+    # Закрываем bot-сессию
+    await bot.session.close()
+    logger.info("Shutdown complete.")
 
 # ─── Автопроверка цен ────────────────────────────────────────────
 async def price_checker():

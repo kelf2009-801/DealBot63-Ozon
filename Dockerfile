@@ -21,7 +21,7 @@ RUN python -m cloakbrowser install
 # Копируем бота и настройки
 COPY main_full.py .
 COPY config.py .
-COPY .env .
+# .env НЕ копируется в образ! Читается через env_file в docker-compose.yml
 
 # Тома для данных и логов
 VOLUME ["/bot/data"]
